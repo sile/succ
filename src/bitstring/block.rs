@@ -23,7 +23,7 @@ impl Block for u8 {
         if bit {
             *self |= 1 << index;
         } else {
-            *self ^= (1 << index) | !*self;
+            *self ^= (1 << index) & *self;
         }
     }
     fn pop_count(&self) -> usize {
@@ -44,7 +44,7 @@ impl Block for u16 {
         if bit {
             *self |= 1 << index;
         } else {
-            *self ^= (1 << index) | !*self;
+            *self ^= (1 << index) & *self;
         }
     }
     fn pop_count(&self) -> usize {
@@ -66,7 +66,7 @@ impl Block for u32 {
         if bit {
             *self |= 1 << index;
         } else {
-            *self ^= (1 << index) | !*self;
+            *self ^= (1 << index) & *self;
         }
     }
     fn pop_count(&self) -> usize {
@@ -89,7 +89,7 @@ impl Block for u64 {
         if bit {
             *self |= 1 << index;
         } else {
-            *self ^= (1 << index) | !*self;
+            *self ^= (1 << index) & *self;
         }
     }
     fn pop_count(&self) -> usize {
@@ -135,5 +135,45 @@ impl SelectOne for u64 {
             }
         }
         Some(offset)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std;
+    use bitstring::ops::{RankOne, SelectOne};
+    use super::*;
+
+    #[test]
+    fn get_and_set() {
+        let mut block = 0b11010 as u64;
+        assert_eq!(block.get(0), false);
+        assert_eq!(block.get(1), true);
+        assert_eq!(block.get(2), false);
+        assert_eq!(block.get(3), true);
+        assert_eq!(block.get(4), true);
+
+        block.set(3, false);
+        assert_eq!(block, 0b10010);
+        block.set(3, false);
+        assert_eq!(block, 0b10010);
+        block.set(3, true);
+        assert_eq!(block, 0b11010);
+    }
+
+    #[test]
+    fn pop_count() {
+        assert_eq!(0b1001010101010111010u64.pop_count(), 10);
+        assert_eq!(0u64.pop_count(), 0);
+        assert_eq!(std::u64::MAX.pop_count(), 64);
+    }
+
+    #[test]
+    fn rank_and_select() {
+        assert_eq!(0b101010010101000001u64.rank_one(10), 4);
+        assert_eq!(0b101010010101000001u64.select_one(4), Some(10));
+
+        assert_eq!(std::u64::MAX.rank_one(60), 61);
+        assert_eq!(std::u64::MAX.select_one(61), Some(60));
     }
 }
