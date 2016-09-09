@@ -4,7 +4,7 @@ use super::{Index, Rank};
 
 // pub trait Block: Sized + Default + RankZero + RankOne +
 // SelectZero + SelectOne + PredZero + PredOne + SuccZero + SuccOne {
-pub trait Block: Sized + Default {
+pub trait Block: Sized + Default + RankOne + SelectZero + SelectOne {
     fn len() -> usize {
         mem::size_of::<Self>() * 8
     }
