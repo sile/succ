@@ -7,10 +7,8 @@ use super::ops::{SuccZero, SuccOne};
 use super::{Index, Rank};
 
 pub trait FixnumLike
-    where Self: Sized + Copy + Eq,
-          Self: U64Like,
-          Self: Not<Output = Self>,
-          Self: Add<Output = Self> + Sub<Output = Self>,
+    where Self: Sized + Copy + Eq + U64Like,
+          Self: Add<Output = Self> + Sub<Output = Self> + Not<Output = Self>,
           Self: BitAnd<Output = Self> + BitOr<Output = Self> + BitXor<Output = Self>,
           Self: Shr<Index, Output = Self> + Shl<Index, Output = Self>
 {
@@ -19,10 +17,8 @@ pub trait FixnumLike
     }
 }
 impl<T> FixnumLike for T
-    where T: Sized + Copy + Eq,
-          T: U64Like,
-          T: Not<Output = T>,
-          T: Add<Output = T> + Sub<Output = T>,
+    where T: Sized + Copy + Eq + U64Like,
+          T: Add<Output = T> + Sub<Output = T> + Not<Output = T>,
           T: BitAnd<Output = T> + BitOr<Output = T> + BitXor<Output = T>,
           T: Shr<Index, Output = T> + Shl<Index, Output = T>
 {
@@ -33,14 +29,17 @@ pub struct Fixnum<T>(T);
 impl<T> Fixnum<T>
     where T: FixnumLike
 {
-    pub fn bitwidth() -> usize {
-        T::bitwidth()
+    pub fn new(n: T) -> Self {
+        Fixnum(n)
     }
     pub fn zero() -> Self {
         Fixnum(T::zero())
     }
     pub fn one() -> Self {
         Fixnum(T::one())
+    }
+    pub fn bitwidth() -> usize {
+        T::bitwidth()
     }
     pub fn to_inner(&self) -> T {
         self.0
