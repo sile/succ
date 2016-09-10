@@ -1,19 +1,16 @@
 use super::Rank;
 use super::Index;
-use super::block::Block;
-use super::ops::{RankZero, RankOne, SelectZero, SelectOne, PredZero, PredOne, SuccZero, SuccOne};
+use super::fixnum::Fixnum;
+use super::fixnum::FixnumLike;
+use super::ops::{RankBit, SelectZero, SelectOne, PredZero, PredOne, SuccZero, SuccOne};
 
-pub struct BitString<B = u64> {
-    blocks: Vec<B>,
+#[derive(Debug, Clone)]
+pub struct BitString<N = u64> {
+    blocks: Vec<Fixnum<N>>,
     len: Index,
 }
-impl Default for BitString<u64> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-impl<B> BitString<B>
-    where B: Block
+impl<N> BitString<N>
+    where N: FixnumLike
 {
     pub fn new() -> Self {
         Self::with_capacity(0)
@@ -31,7 +28,7 @@ impl<B> BitString<B>
     pub fn push(&mut self, bit: bool) {
         let (base, offset) = Self::base_and_offset(self.len);
         if self.blocks.len() == base as usize {
-            self.blocks.push(B::zero());
+            self.blocks.push(Fixnum::zero());
         }
         self.blocks[base as usize].set(offset, bit);
         self.len += 1;
@@ -39,37 +36,30 @@ impl<B> BitString<B>
     pub fn len(&self) -> Index {
         self.len
     }
-    pub fn iter(&self) -> Iter<B> {
+    pub fn iter(&self) -> Iter<N> {
         Iter::new(self)
     }
-    pub fn as_blocks(&self) -> &[B] {
+    pub fn as_blocks(&self) -> &[Fixnum<N>] {
         &self.blocks
     }
-    pub fn into_blocks(self) -> Vec<B> {
+    pub fn into_blocks(self) -> Vec<Fixnum<N>> {
         self.blocks
     }
 
     fn base_and_offset(index: Index) -> (usize, Index) {
-        ((index / B::len() as Index) as usize, index % B::len() as Index)
+        ((index / N::bitwidth() as Index) as usize, index % N::bitwidth() as Index)
     }
 }
-impl<B> RankZero for BitString<B>
-    where B: Block
-{
-    fn rank_zero(&self, index: Index) -> Rank {
-        index - self.rank_one(index)
-    }
-}
-impl<B> RankOne for BitString<B>
-    where B: Block
+impl<N> RankBit for BitString<N>
+    where N: FixnumLike
 {
     fn rank_one(&self, index: Index) -> Rank {
         let mut rank = 0;
         let mut rest = index;
         for b in self.as_blocks() {
-            if rest > B::len() as Index {
+            if rest > N::bitwidth() as Index {
                 rank += b.pop_count() as Rank;
-                rest -= B::len() as Index;
+                rest -= N::bitwidth() as Index;
             } else {
                 rank += b.rank_one(rest);
                 break;
@@ -78,8 +68,8 @@ impl<B> RankOne for BitString<B>
         rank
     }
 }
-impl<B> SelectZero for BitString<B>
-    where B: Block
+impl<N> SelectZero for BitString<N>
+    where N: FixnumLike
 {
     fn select_zero(&self, rank: Rank) -> Option<Index> {
         if rank == 0 {
@@ -89,10 +79,10 @@ impl<B> SelectZero for BitString<B>
         let mut rest = rank;
         let mut index = 0 as Index;
         for b in self.as_blocks() {
-            let zeros = (B::len() - b.pop_count()) as Rank;
+            let zeros = (N::bitwidth() - b.pop_count()) as Rank;
             if zeros < rest {
                 rest -= zeros;
-                index += B::len() as Index;
+                index += N::bitwidth() as Index;
             } else {
                 index += b.select_zero(rest).unwrap();
                 return Some(index);
@@ -101,8 +91,8 @@ impl<B> SelectZero for BitString<B>
         None
     }
 }
-impl<B> SelectOne for BitString<B>
-    where B: Block
+impl<N> SelectOne for BitString<N>
+    where N: FixnumLike
 {
     fn select_one(&self, rank: Rank) -> Option<Index> {
         if rank == 0 {
@@ -115,7 +105,7 @@ impl<B> SelectOne for BitString<B>
             let ones = b.pop_count() as Rank;
             if ones < rest {
                 rest -= ones;
-                index += B::len() as Index;
+                index += N::bitwidth() as Index;
             } else {
                 index += b.select_one(rest).unwrap();
                 return Some(index);
@@ -124,22 +114,22 @@ impl<B> SelectOne for BitString<B>
         None
     }
 }
-impl<B> PredZero for BitString<B>
-    where B: Block
+impl<N> PredZero for BitString<N>
+    where N: FixnumLike
 {
     fn pred_zero(&self, index: Index) -> Option<Index> {
         self.select_zero(self.rank_zero(index))
     }
 }
-impl<B> PredOne for BitString<B>
-    where B: Block
+impl<N> PredOne for BitString<N>
+    where N: FixnumLike
 {
     fn pred_one(&self, index: Index) -> Option<Index> {
         self.select_one(self.rank_one(index))
     }
 }
-impl<B> SuccZero for BitString<B>
-    where B: Block
+impl<N> SuccZero for BitString<N>
+    where N: FixnumLike
 {
     fn succ_zero(&self, index: Index) -> Option<Index> {
         let rank = self.rank_zero(index);
@@ -150,8 +140,8 @@ impl<B> SuccZero for BitString<B>
         }
     }
 }
-impl<B> SuccOne for BitString<B>
-    where B: Block
+impl<N> SuccOne for BitString<N>
+    where N: FixnumLike
 {
     fn succ_one(&self, index: Index) -> Option<Index> {
         let rank = self.rank_one(index);
@@ -163,21 +153,27 @@ impl<B> SuccOne for BitString<B>
     }
 }
 
-pub struct Iter<'a, B: 'a> {
-    bs: &'a BitString<B>,
+pub struct Iter<'a, N: 'a> {
+    bs: &'a BitString<N>,
     i: Index,
 }
-impl<'a, B: 'a> Iter<'a, B> {
-    pub fn new(bs: &'a BitString<B>) -> Self {
+impl<'a, N: 'a> Iter<'a, N> {
+    pub fn new(bs: &'a BitString<N>) -> Self {
         Iter { bs: bs, i: 0 }
     }
 }
-impl<'a, B: 'a> Iterator for Iter<'a, B>
-    where B: Block
+impl<'a, N: 'a> Iterator for Iter<'a, N>
+    where N: FixnumLike
 {
     type Item = bool;
     fn next(&mut self) -> Option<Self::Item> {
         self.i += 1;
         self.bs.get(self.i - 1)
     }
+}
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn it_works() {}
 }

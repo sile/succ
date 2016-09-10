@@ -1,4 +1,4 @@
-pub mod bitstring;
+pub mod bitstring; // TODO: => bit
 pub mod tree;
 
 #[cfg(test)]
