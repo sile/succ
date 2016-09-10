@@ -1,6 +1,7 @@
 use std::fmt;
 use std::iter;
 
+use super::Bit;
 use super::Rank;
 use super::Index;
 use super::fixnum::Fixnum;
@@ -29,7 +30,7 @@ impl<N> BitString<N>
             len: 0,
         }
     }
-    pub fn get(&self, index: Index) -> Option<bool> {
+    pub fn get(&self, index: Index) -> Option<Bit> {
         if index < self.len() {
             let (base, offset) = Self::base_and_offset(index);
             Some(self.fixnums[base].get(offset))
@@ -37,7 +38,7 @@ impl<N> BitString<N>
             None
         }
     }
-    pub fn push(&mut self, bit: bool) {
+    pub fn push(&mut self, bit: Bit) {
         let (base, offset) = Self::base_and_offset(self.len);
         if self.fixnums.len() == base as usize {
             self.fixnums.push(Fixnum::zero());
@@ -165,11 +166,11 @@ impl<N> SuccOne for BitString<N>
     }
 }
 
-impl<N> iter::FromIterator<bool> for BitString<N>
+impl<N> iter::FromIterator<Bit> for BitString<N>
     where N: FixnumLike
 {
     fn from_iter<T>(iter: T) -> Self
-        where T: IntoIterator<Item = bool>
+        where T: IntoIterator<Item = Bit>
     {
         let iter = iter.into_iter();
         let mut bs = Self::with_capacity(iter.size_hint().1.unwrap_or(0) as u64);
@@ -185,7 +186,7 @@ impl<N> fmt::Display for BitString<N>
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for b in self.iter() {
-            try!(write!(f, "{}", if b { 1 } else { 0 }));
+            try!(write!(f, "{}", b))
         }
         Ok(())
     }
@@ -203,7 +204,7 @@ impl<'a, N: 'a> Iter<'a, N> {
 impl<'a, N: 'a> Iterator for Iter<'a, N>
     where N: FixnumLike
 {
-    type Item = bool;
+    type Item = Bit;
     fn next(&mut self) -> Option<Self::Item> {
         self.i += 1;
         self.bs.get(self.i - 1)
@@ -213,20 +214,21 @@ impl<'a, N: 'a> Iterator for Iter<'a, N>
 #[cfg(test)]
 mod test {
     use super::*;
+    use super::super::Bit::*;
 
     #[test]
     fn it_works() {
-        let bits = [false, true, true, true, false, true, false, false, true, false];
+        let bits = [Zero, One, One, One, Zero, One, Zero, Zero, One, Zero];
         let mut bs = BitString::<u8>::new();
         for b in &bits {
-            bs.push(*b);
+            bs.push(From::from(*b));
         }
         assert_eq!(bs.iter().collect::<Vec<_>>(), bits);
     }
 
     #[test]
     fn to_string() {
-        let bits = [false, true, true, true, false, true, false, false, true, false];
+        let bits = [Zero, One, One, One, Zero, One, Zero, Zero, One, Zero];
         let bs = bits.iter().cloned().collect::<BitString>();
         assert_eq!(bs.to_string(), "0111010010");
     }

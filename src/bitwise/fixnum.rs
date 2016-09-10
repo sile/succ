@@ -1,6 +1,8 @@
 use std::mem;
 use std::fmt;
 use std::ops::{Add, BitAnd, BitOr, BitXor, Not, Shl, Shr, Sub};
+
+use super::Bit;
 use super::ops::RankBit;
 use super::ops::{SelectZero, SelectOne};
 use super::ops::{PredZero, PredOne};
@@ -45,12 +47,12 @@ impl<T> Fixnum<T>
     pub fn to_inner(&self) -> T {
         self.0
     }
-    pub fn get(&self, index: Index) -> bool {
-        (self.0 & (T::one() << index)) != T::zero()
+    pub fn get(&self, index: Index) -> Bit {
+        Bit::from((self.0 & (T::one() << index)) != T::zero())
     }
-    pub fn set(&mut self, index: Index, bit: bool) {
+    pub fn set(&mut self, index: Index, bit: Bit) {
         let x = self.0;
-        if bit {
+        if bit.is_one() {
             self.0 = x | T::one() << index;
         } else {
             self.0 = x ^ (T::one() << index) & x;
@@ -159,7 +161,7 @@ impl<T> PredOne for Fixnum<T>
     where T: FixnumLike
 {
     fn pred_one(&self, index: Index) -> Option<Index> {
-        if self.get(index) {
+        if self.get(index).is_one() {
             Some(index)
         } else {
             let mut x = self.0 & ((T::one() << index) - T::one());
@@ -196,7 +198,7 @@ impl<T> SuccOne for Fixnum<T>
     where T: FixnumLike
 {
     fn succ_one(&self, index: Index) -> Option<Index> {
-        if self.get(index) {
+        if self.get(index).is_one() {
             Some(index)
         } else {
             let x = self.0 ^ (self.0 & ((T::one() << index) - T::one()));
@@ -214,7 +216,7 @@ impl<T> fmt::Display for Fixnum<T>
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for i in 0..T::bitwidth() {
-            try!(write!(f, "{}", if self.get(i as Index) { 1 } else { 0 }));
+            try!(write!(f, "{}", self.get(i as Index)));
         }
         Ok(())
     }
@@ -266,9 +268,10 @@ impl U64Like for u64 {
 #[cfg(test)]
 mod test {
     use std;
+    use super::*;
+    use super::super::Bit::*;
     use super::super::ops::{RankBit, SelectZero, SelectOne};
     use super::super::ops::{PredZero, PredOne, SuccZero, SuccOne};
-    use super::*;
 
     fn f(n: u64) -> Fixnum<u64> {
         Fixnum(n)
@@ -277,17 +280,17 @@ mod test {
     #[test]
     fn get_and_set() {
         let mut block = f(0b11010);
-        assert_eq!(block.get(0), false);
-        assert_eq!(block.get(1), true);
-        assert_eq!(block.get(2), false);
-        assert_eq!(block.get(3), true);
-        assert_eq!(block.get(4), true);
+        assert_eq!(block.get(0), Zero);
+        assert_eq!(block.get(1), One);
+        assert_eq!(block.get(2), Zero);
+        assert_eq!(block.get(3), One);
+        assert_eq!(block.get(4), One);
 
-        block.set(3, false);
+        block.set(3, Zero);
         assert_eq!(block, f(0b10010));
-        block.set(3, false);
+        block.set(3, Zero);
         assert_eq!(block, f(0b10010));
-        block.set(3, true);
+        block.set(3, One);
         assert_eq!(block, f(0b11010));
     }
 
