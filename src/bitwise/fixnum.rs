@@ -256,8 +256,8 @@ impl U64Like for u64 {
 #[cfg(test)]
 mod test {
     use std;
-    use bitstring::ops::{RankBit, SelectZero, SelectOne};
-    use bitstring::ops::{PredZero, PredOne, SuccZero, SuccOne};
+    use super::super::ops::{RankBit, SelectZero, SelectOne};
+    use super::super::ops::{PredZero, PredOne, SuccZero, SuccOne};
     use super::*;
 
     fn f(n: u64) -> Fixnum<u64> {
