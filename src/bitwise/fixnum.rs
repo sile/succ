@@ -1,4 +1,5 @@
 use std::mem;
+use std::fmt;
 use std::ops::{Add, BitAnd, BitOr, BitXor, Not, Shl, Shr, Sub};
 use super::ops::RankBit;
 use super::ops::{SelectZero, SelectOne};
@@ -208,6 +209,16 @@ impl<T> SuccOne for Fixnum<T>
         }
     }
 }
+impl<T> fmt::Display for Fixnum<T>
+    where T: FixnumLike
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for i in 0..T::bitwidth() {
+            try!(write!(f, "{}", if self.get(i as Index) { 1 } else { 0 }));
+        }
+        Ok(())
+    }
+}
 
 pub trait U64Like: Sized {
     fn to_u64(&self) -> u64;
@@ -325,5 +336,11 @@ mod test {
         assert_eq!(f(0b101011110101000001).succ_one(6), Some(6));
         assert_eq!(f(0b101011110101000001).succ_one(11), Some(11));
         assert_eq!(f(0b101011110101000001).succ_one(30), None);
+    }
+
+    #[test]
+    fn to_string() {
+        assert_eq!(Fixnum(0b0011110101000001u16).to_string(),
+                   "1000001010111100");
     }
 }
