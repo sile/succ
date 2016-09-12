@@ -1,6 +1,8 @@
 pub use self::byte_lines::ByteLines;
+pub use self::tree_traversal::TreeTraversal;
 
 mod byte_lines;
+mod tree_traversal;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct VisitNode<T> {

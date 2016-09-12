@@ -32,6 +32,9 @@ pub trait Node<L>: Sized {
         }
         last_child
     }
+    fn into_tree_traversal(self) -> traversal::TreeTraversal<L, Self> {
+        traversal::TreeTraversal::new(self)
+    }
 }
 
 #[derive(Debug, Clone)]
