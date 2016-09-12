@@ -1,4 +1,7 @@
+use std::mem;
 use std::marker::PhantomData;
+
+use bitwise::ops::ExternalByteSize;
 
 pub mod traversal;
 pub mod balanced_parens;
@@ -58,6 +61,13 @@ pub struct LabelVec<T>(Vec<T>);
 impl<T> LabelVec<T> {
     pub fn new() -> Self {
         LabelVec(Vec::new())
+    }
+}
+impl<T> ExternalByteSize for LabelVec<T>
+    where T: Sized
+{
+    fn external_byte_size(&self) -> u64 {
+        mem::size_of_val(&self.0.len()) as u64 + mem::size_of::<T>() as u64 * self.0.len() as u64
     }
 }
 impl<T> Labels for LabelVec<T>
