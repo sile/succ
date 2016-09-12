@@ -22,8 +22,7 @@ impl<T> VisitNode<T> {
 
 pub trait DepthFirstTraverse {
     type Label;
-    type Error;
-    fn next(&mut self) -> Option<Result<VisitNode<Self::Label>, Self::Error>>;
+    fn next(&mut self) -> Option<VisitNode<Self::Label>>;
     fn size_hint(&self) -> (usize, Option<usize>) {
         (0, None)
     }
@@ -38,7 +37,7 @@ impl<T> DepthFirstIter<T> {
 impl<T> Iterator for DepthFirstIter<T>
     where T: DepthFirstTraverse
 {
-    type Item = Result<VisitNode<T::Label>, T::Error>;
+    type Item = VisitNode<T::Label>;
     fn next(&mut self) -> Option<Self::Item> {
         self.0.next()
     }

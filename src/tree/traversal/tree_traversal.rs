@@ -20,8 +20,7 @@ impl<L, N> DepthFirstTraverse for TreeTraversal<L, N>
     where N: Node<L>
 {
     type Label = L;
-    type Error = ();
-    fn next(&mut self) -> Option<Result<VisitNode<Self::Label>, Self::Error>> {
+    fn next(&mut self) -> Option<VisitNode<Self::Label>> {
         if let Some((edge, level, nth_child)) = self.stack.pop() {
             let visit = VisitNode::new(edge.label, level, nth_child);
             if let Some(sibling) = edge.node.next_sibling() {
@@ -30,7 +29,7 @@ impl<L, N> DepthFirstTraverse for TreeTraversal<L, N>
             if let Some(child) = edge.node.first_child() {
                 self.stack.push((child, level + 1, 0));
             }
-            Some(Ok(visit))
+            Some(visit)
         } else {
             None
         }

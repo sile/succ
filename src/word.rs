@@ -142,8 +142,7 @@ impl<T, W> DepthFirstTraverse for DepthFirstTraversal<T, W>
           T: Clone + Eq
 {
     type Label = Letter<T>;
-    type Error = ();
-    fn next(&mut self) -> Option<Result<traversal::VisitNode<Self::Label>, Self::Error>> {
+    fn next(&mut self) -> Option<traversal::VisitNode<Self::Label>> {
         loop {
             if self.path.len() <= self.buf.len() {
                 let level = self.path.len() - 1;
@@ -152,7 +151,7 @@ impl<T, W> DepthFirstTraverse for DepthFirstTraversal<T, W>
                 let nth_child = self.path[level].1;
                 self.path.push((Some(label.clone()), 0));
                 let node = traversal::VisitNode::new(label, level, nth_child);
-                return Some(Ok(node));
+                return Some(node);
             } else {
                 match self.words.next() {
                     Some(v) => {

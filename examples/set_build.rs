@@ -28,7 +28,7 @@ fn main() {
     match matches.value_of("type") {
         Some("null") => {
             let lines = traversal::ByteLines::new(stdin.lock());
-            for _ in lines.into_depth_first_iter() {
+            for _ in lines.into_depth_first_traversal().iter() {
             }
         }
         Some("hashset") => {
@@ -38,10 +38,9 @@ fn main() {
             let _ = SplaySet::from_iter(stdin.lock().lines().map(|l| l.unwrap()));
         }
         Some("parentheses") => {
-            let lines = traversal::ByteLines::new(stdin.lock());
+            let lines = traversal::ByteLines::new(stdin.lock()).into_depth_first_traversal();
             let tree = succ::BalancedParensTree::<_>::new_builder(lines, word::Letters::new())
-                .build_all()
-                .unwrap();
+                .build_all();
             println!("NODES: {}", tree.len());
             println!("BYTES: {}", tree.external_byte_size());
             if matches.is_present("show_words") {

@@ -1,60 +1,40 @@
 use std::io;
 
-use word::Letter;
-use super::VisitNode;
-use super::DepthFirstIter;
-use super::DepthFirstTraverse;
+use word::DepthFirstTraversal;
 
 pub struct ByteLines<R> {
-    buf: Vec<u8>,
-    path: Vec<(Letter<u8>, usize)>,
     reader: io::Split<R>,
+    on_error: Box<Fn(io::Error)>,
 }
 impl<R> ByteLines<R>
     where R: io::BufRead
 {
     pub fn new(reader: R) -> Self {
         ByteLines {
-            buf: Vec::new(),
-            path: vec![(Letter::new(false, 0), 0)],
             reader: reader.split(b'\n'),
+            on_error: Box::new(|e| panic!("Error: {}", e)),
         }
     }
-    pub fn into_depth_first_iter(self) -> DepthFirstIter<Self> {
-        DepthFirstIter::new(self)
+    pub fn set_on_error<F>(&mut self, on_error: F)
+        where F: Fn(io::Error) + 'static
+    {
+        self.on_error = Box::new(on_error);
+    }
+    pub fn into_depth_first_traversal(self) -> DepthFirstTraversal<u8, Self> {
+        DepthFirstTraversal::new(self)
     }
 }
-impl<R> DepthFirstTraverse for ByteLines<R>
+impl<R> Iterator for ByteLines<R>
     where R: io::BufRead
 {
-    type Label = Letter<u8>;
-    type Error = io::Error;
-    fn next(&mut self) -> Option<Result<VisitNode<Self::Label>, Self::Error>> {
-        loop {
-            if self.path.len() <= self.buf.len() {
-                let level = self.path.len() - 1;
-                let is_terminal = self.path.len() == self.buf.len();
-                let label = Letter::new(is_terminal, self.buf[level]);
-                let nth_child = self.path[level].1;
-                self.path.push((label.clone(), 0));
-                let node = VisitNode::new(label, level, nth_child);
-                return Some(Ok(node));
-            } else {
-                match self.reader.next() {
-                    Some(Ok(v)) => {
-                        self.buf = v;
-                        if let Some(tail) = self.path
-                            .iter()
-                            .skip(1)
-                            .zip(self.buf.iter())
-                            .position(|(&(ref l, _), &b)| l.value != b) {
-                            self.path.truncate(tail + 1);
-                            self.path[tail].1 += 1;
-                        }
-                    }
-                    None => return None,
-                    Some(Err(e)) => return Some(Err(e)),
-                }
+    type Item = Vec<u8>;
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.reader.next() {
+            None => None,
+            Some(Ok(line)) => Some(line),
+            Some(Err(e)) => {
+                (self.on_error)(e);
+                None
             }
         }
     }
@@ -69,8 +49,9 @@ mod test {
 
     #[test]
     fn it_works() {
-        let lines = ByteLines::new(io::Cursor::new(b"aaa\nabc\nd")).into_depth_first_iter();
-        assert_eq!(lines.map(|r| r.unwrap()).collect::<Vec<_>>(),
+        let lines =
+            ByteLines::new(io::Cursor::new(b"aaa\nabc\nd")).into_depth_first_traversal().iter();
+        assert_eq!(lines.collect::<Vec<_>>(),
                    vec![VisitNode::new(Letter::new(false, b'a'), 0, 0),
                         VisitNode::new(Letter::new(false, b'a'), 1, 0),
                         VisitNode::new(Letter::new(true, b'a'), 2, 0),

@@ -25,7 +25,7 @@ pub struct BalancedParensTree<L, N = SparseOneNnd> {
 impl<L> BalancedParensTree<LabelVec<L>, SparseOneNnd>
     where L: Clone
 {
-    pub fn new<T>(tree: T) -> Result<Self, T::Error>
+    pub fn new<T>(tree: T) -> Self
         where T: DepthFirstTraverse<Label = L>
     {
         Self::new_builder(tree, LabelVec::new()).build_all()
@@ -97,9 +97,8 @@ impl<T, L, N> Builder<T, L, N>
         this.parens.push(Bit::One); // The open parenthesis of the virtual root
         this
     }
-    pub fn build_once(&mut self) -> Result<bool, T::Error> {
+    pub fn build_once(&mut self) -> bool {
         if let Some(node) = self.iter.next() {
-            let node = try!(node);
             let curr_level = node.level + 1;
 
             for _ in curr_level..self.prev_level + 1 {
@@ -109,9 +108,9 @@ impl<T, L, N> Builder<T, L, N>
             self.parens.push(Bit::One);
             self.labels.push(node.label);
             self.prev_level = curr_level;
-            Ok(true)
+            true
         } else {
-            Ok(false)
+            false
         }
     }
     pub fn finish(mut self) -> BalancedParensTree<L, N> {
@@ -125,9 +124,9 @@ impl<T, L, N> Builder<T, L, N>
             parens: Parens::new(self.parens), // TODO: incremental
         }
     }
-    pub fn build_all(mut self) -> Result<BalancedParensTree<L, N>, T::Error> {
-        while try!(self.build_once()) {}
-        Ok(self.finish())
+    pub fn build_all(mut self) -> BalancedParensTree<L, N> {
+        while self.build_once() {}
+        self.finish()
     }
 }
 
@@ -204,7 +203,7 @@ mod test {
     #[test]
     fn it_works() {
         let lines = ByteLines::new(io::Cursor::new(b"aaa\nabc\nd"));
-        let tree = BalancedParensTree::new(lines).unwrap();
+        let tree = BalancedParensTree::new(lines.into_depth_first_traversal());
         assert_eq!(Words::new(tree.root())
                        .map(|b| String::from_utf8(b).unwrap())
                        .collect::<Vec<_>>(),
@@ -215,7 +214,7 @@ mod test {
     fn it_works2() {
         let input = "aaa111222\nabc3344\nd".to_string();
         let lines = ByteLines::new(io::Cursor::new(input.as_bytes()));
-        let tree = BalancedParensTree::new(lines).unwrap();
+        let tree = BalancedParensTree::new(lines.into_depth_first_traversal());
         assert_eq!(Words::new(tree.root())
                        .map(|b| String::from_utf8(b).unwrap())
                        .collect::<Vec<_>>(),
@@ -229,7 +228,7 @@ mod test {
 
         let input = include_str!("/usr/share/dict/american-english");
         let lines = ByteLines::new(io::Cursor::new(input.as_bytes()));
-        let tree = BalancedParensTree::new(lines).unwrap();
+        let tree = BalancedParensTree::new(lines.into_depth_first_traversal());
 
         fn label_eq(a: &&u8, b: &Letter<u8>) -> bool {
             **a == b.value
