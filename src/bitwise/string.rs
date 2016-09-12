@@ -1,3 +1,4 @@
+use std::mem;
 use std::fmt;
 use std::iter;
 
@@ -6,6 +7,7 @@ use super::Rank;
 use super::Index;
 use super::fixnum::Fixnum;
 use super::fixnum::FixnumLike;
+use super::ops;
 use super::ops::{RankBit, SelectZero, SelectOne, PredZero, PredOne, SuccZero, SuccOne};
 
 #[derive(Debug, Clone)]
@@ -37,6 +39,16 @@ impl<N> BitString<N>
         } else {
             None
         }
+    }
+    pub fn resize(&mut self, size: Index) {
+        let new_len = (size / N::bitwidth() as u64) as usize + 1;
+        self.fixnums.resize(new_len, Fixnum::zero());
+        self.len = size;
+    }
+    pub fn set(&mut self, index: Index, bit: Bit) {
+        assert!(index < self.len());
+        let (base, offset) = Self::base_and_offset(index);
+        self.fixnums[base as usize].set(offset, bit);
     }
     pub fn push(&mut self, bit: Bit) {
         let (base, offset) = Self::base_and_offset(self.len);
@@ -70,7 +82,7 @@ impl<N> RankBit for BitString<N>
         let mut rank = 0;
         let mut rest = index;
         for b in self.as_fixnums() {
-            if rest > N::bitwidth() as Index {
+            if rest >= N::bitwidth() as Index {
                 rank += b.pop_count() as Rank;
                 rest -= N::bitwidth() as Index;
             } else {
@@ -90,9 +102,17 @@ impl<N> SelectZero for BitString<N>
         }
 
         let mut rest = rank;
+        let mut rest_len = self.len();
         let mut index = 0 as Index;
         for b in self.as_fixnums() {
-            let zeros = (N::bitwidth() - b.pop_count()) as Rank;
+            let mut zeros = (N::bitwidth() - b.pop_count()) as Rank;
+
+            if rest_len < N::bitwidth() as Index {
+                zeros -= N::bitwidth() as Index - rest_len;
+            } else {
+                rest_len -= N::bitwidth() as Index;
+            }
+
             if zeros < rest {
                 rest -= zeros;
                 index += N::bitwidth() as Index;
@@ -131,38 +151,33 @@ impl<N> PredZero for BitString<N>
     where N: FixnumLike
 {
     fn pred_zero(&self, index: Index) -> Option<Index> {
-        self.select_zero(self.rank_zero(index))
+        ops::naive_pred_zero(self, index)
     }
 }
 impl<N> PredOne for BitString<N>
     where N: FixnumLike
 {
     fn pred_one(&self, index: Index) -> Option<Index> {
-        self.select_one(self.rank_one(index))
+        ops::naive_pred_one(self, index)
     }
 }
 impl<N> SuccZero for BitString<N>
     where N: FixnumLike
 {
     fn succ_zero(&self, index: Index) -> Option<Index> {
-        let rank = self.rank_zero(index);
-        if Some(index) == self.select_zero(rank) {
-            Some(index)
-        } else {
-            self.select_zero(rank + 1)
-        }
+        ops::naive_succ_zero(self, index)
     }
 }
 impl<N> SuccOne for BitString<N>
     where N: FixnumLike
 {
     fn succ_one(&self, index: Index) -> Option<Index> {
-        let rank = self.rank_one(index);
-        if Some(index) == self.select_one(rank) {
-            Some(index)
-        } else {
-            self.select_one(rank + 1)
-        }
+        ops::naive_succ_one(self, index)
+    }
+}
+impl<N> ops::ExternalByteSize for BitString<N> {
+    fn external_byte_size(&self) -> u64 {
+        self.fixnums.len() as u64 * mem::size_of::<N>() as u64
     }
 }
 
@@ -214,16 +229,42 @@ impl<'a, N: 'a> Iterator for Iter<'a, N>
 #[cfg(test)]
 mod test {
     use super::*;
+    use super::super::{Index, Rank};
     use super::super::Bit::*;
+    use super::super::ops::*;
 
     #[test]
     fn it_works() {
-        let bits = [Zero, One, One, One, Zero, One, Zero, Zero, One, Zero];
+        let bits = [Zero, One, One, One, Zero, One, Zero, Zero, One, Zero, Zero, One, One, Zero,
+                    One, One, Zero, One];
         let mut bs = BitString::<u8>::new();
         for b in &bits {
             bs.push(From::from(*b));
         }
         assert_eq!(bs.iter().collect::<Vec<_>>(), bits);
+
+        let expected = LinearFid::new(bits.iter().cloned());
+        for i in 0..bits.len() {
+            println!("I: {}", i);
+
+            // rank
+            assert_eq!(bs.rank_zero(i as Index), expected.rank_zero(i as Index));
+            assert_eq!(bs.rank_one(i as Index), expected.rank_one(i as Index));
+
+            // select
+            assert_eq!(bs.select_zero((i + 1) as Rank),
+                       expected.select_zero((i + 1) as Rank));
+            assert_eq!(bs.select_one((i + 1) as Rank),
+                       expected.select_one((i + 1) as Rank));
+
+            // pred
+            assert_eq!(bs.pred_zero(i as Index), expected.pred_zero(i as Index));
+            assert_eq!(bs.pred_one(i as Index), expected.pred_one(i as Index));
+
+            // succ
+            assert_eq!(bs.succ_zero(i as Index), expected.succ_zero(i as Index));
+            assert_eq!(bs.succ_one(i as Index), expected.succ_one(i as Index));
+        }
     }
 
     #[test]

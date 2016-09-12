@@ -3,6 +3,7 @@ use std::fmt;
 use std::ops::{Add, BitAnd, BitOr, BitXor, Not, Shl, Shr, Sub};
 
 use super::Bit;
+use super::ops::GetClose;
 use super::ops::RankBit;
 use super::ops::{SelectZero, SelectOne};
 use super::ops::{PredZero, PredOne};
@@ -83,7 +84,13 @@ impl<T> RankBit for Fixnum<T>
     where T: FixnumLike
 {
     fn rank_one(&self, index: Index) -> Rank {
-        Fixnum(self.0 & ((T::one() << (index + 1)) - T::one())).pop_count() as Rank
+        debug_assert!(index < Self::bitwidth() as Index);
+        let n = if index + 1 == Self::bitwidth() as Index {
+            self.0
+        } else {
+            self.0 & ((T::one() << (index + 1)) - T::one())
+        };
+        Fixnum(n).pop_count() as Rank
     }
 }
 impl<T> SelectZero for Fixnum<T>
@@ -209,6 +216,24 @@ impl<T> SuccOne for Fixnum<T>
                 Some(trailing_zeros as Index)
             }
         }
+    }
+}
+impl<T> GetClose for Fixnum<T>
+    where T: FixnumLike
+{
+    fn get_close(&self, index: Index) -> Option<Index> {
+        let mut level = 0;
+        for i in index..T::bitwidth() as Index {
+            if self.get(i).is_one() {
+                level += 1;
+            } else {
+                level -= 1;
+                if level == 0 {
+                    return Some(i);
+                }
+            }
+        }
+        None
     }
 }
 impl<T> fmt::Display for Fixnum<T>
