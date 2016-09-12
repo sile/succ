@@ -26,7 +26,17 @@ impl<L> BalancedParensTree<LabelVec<L>, SparseOneNnd>
     pub fn new<T>(tree: T) -> Result<Self, T::Error>
         where T: DepthFirstTraverse<Label = L>
     {
-        BalancedParensBuilder::new(tree, LabelVec::new()).build_all()
+        Self::new_builder(tree, LabelVec::new()).build_all()
+    }
+}
+impl<L, N> BalancedParensTree<L, N>
+    where L: Labels,
+          N: NndOne + iter::FromIterator<Bit>
+{
+    pub fn new_builder<T>(tree: T, labels: L) -> Builder<T, L, N>
+        where T: DepthFirstTraverse<Label = L::Label>
+    {
+        Builder::new(tree, labels)
     }
 }
 impl<L, N> BalancedParensTree<L, N>
@@ -51,20 +61,20 @@ impl<L, N> BalancedParensTree<L, N> {
     }
 }
 
-pub struct BalancedParensBuilder<T, L, N = SparseOneNnd> {
+pub struct Builder<T, L, N = SparseOneNnd> {
     iter: DepthFirstIter<T>,
     labels: L,
     parens: BitString,
     prev_level: usize,
     _nnd: PhantomData<N>,
 }
-impl<T, L, N> BalancedParensBuilder<T, L, N>
+impl<T, L, N> Builder<T, L, N>
     where T: DepthFirstTraverse,
           L: Labels<Label = T::Label>,
           N: NndOne + iter::FromIterator<Bit>
 {
     pub fn new(tree: T, labels: L) -> Self {
-        let mut this = BalancedParensBuilder {
+        let mut this = Builder {
             iter: DepthFirstIter::new(tree),
             labels: labels,
             parens: BitString::new(),

@@ -1,8 +1,5 @@
 use std::marker::PhantomData;
 
-#[doc(inline)]
-pub use self::balanced_parens::BalancedParensTree;
-
 pub mod traversal;
 pub mod balanced_parens;
 

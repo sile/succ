@@ -61,6 +61,9 @@ impl<N> BitString<N>
     pub fn len(&self) -> Index {
         self.len
     }
+    pub fn shrink_to_fit(&mut self) {
+        self.fixnums.shrink_to_fit();
+    }
     pub fn iter(&self) -> Iter<N> {
         Iter::new(self)
     }

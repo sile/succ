@@ -1,8 +1,11 @@
 use tree::Node;
 use tree::Edge;
+use tree::Labels;
 use tree::traversal;
 use tree::traversal::DepthFirstIter;
 use tree::traversal::DepthFirstTraverse;
+use bitwise::Index;
+use bitwise::BitString;
 
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct Letter<T> {
@@ -17,6 +20,43 @@ impl<T> Letter<T> {
         }
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct Letters<T> {
+    pub end_of_words: BitString,
+    pub values: Vec<T>,
+}
+impl<T> Letters<T> {
+    pub fn new() -> Self {
+        Letters {
+            end_of_words: BitString::new(),
+            values: Vec::new(),
+        }
+    }
+}
+impl<T> Labels for Letters<T>
+    where T: Clone
+{
+    type Label = Letter<T>;
+    fn push(&mut self, label: Self::Label) {
+        self.end_of_words.push(From::from(label.end_of_word));
+        self.values.push(label.value);
+    }
+    fn get(&self, index: usize) -> Option<Self::Label> {
+        self.values
+            .get(index)
+            .cloned()
+            .map(|v| Letter::new(self.end_of_words.get(index as Index).unwrap().is_one(), v))
+    }
+    fn len(&self) -> usize {
+        self.values.len()
+    }
+    fn shrink_to_fit(&mut self) {
+        self.end_of_words.shrink_to_fit();
+        self.values.shrink_to_fit();
+    }
+}
+
 
 #[derive(Debug)]
 pub struct Words<T, N> {
