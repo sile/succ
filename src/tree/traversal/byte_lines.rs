@@ -1,7 +1,7 @@
 use std::io;
 
 use word::Letter;
-use super::Node;
+use super::VisitNode;
 use super::DepthFirstIter;
 use super::DepthFirstTraverse;
 
@@ -29,7 +29,7 @@ impl<R> DepthFirstTraverse for ByteLines<R>
 {
     type Label = Letter<u8>;
     type Error = io::Error;
-    fn next(&mut self) -> Option<Result<Node<Self::Label>, Self::Error>> {
+    fn next(&mut self) -> Option<Result<VisitNode<Self::Label>, Self::Error>> {
         loop {
             if self.path.len() <= self.buf.len() {
                 let level = self.path.len() - 1;
@@ -37,7 +37,7 @@ impl<R> DepthFirstTraverse for ByteLines<R>
                 let label = Letter::new(is_terminal, self.buf[level]);
                 let nth_child = self.path[level].1;
                 self.path.push((label.clone(), 0));
-                let node = super::Node::new(label, level, nth_child);
+                let node = VisitNode::new(label, level, nth_child);
                 return Some(Ok(node));
             } else {
                 match self.reader.next() {
@@ -64,18 +64,18 @@ impl<R> DepthFirstTraverse for ByteLines<R>
 mod test {
     use std::io;
     use word::Letter;
-    use super::super::Node;
+    use super::super::VisitNode;
     use super::*;
 
     #[test]
     fn it_works() {
         let lines = ByteLines::new(io::Cursor::new(b"aaa\nabc\nd")).into_depth_first_iter();
         assert_eq!(lines.map(|r| r.unwrap()).collect::<Vec<_>>(),
-                   vec![Node::new(Letter::new(false, b'a'), 0, 0),
-                        Node::new(Letter::new(false, b'a'), 1, 0),
-                        Node::new(Letter::new(true, b'a'), 2, 0),
-                        Node::new(Letter::new(false, b'b'), 1, 1),
-                        Node::new(Letter::new(true, b'c'), 2, 0),
-                        Node::new(Letter::new(true, b'd'), 0, 1)]);
+                   vec![VisitNode::new(Letter::new(false, b'a'), 0, 0),
+                        VisitNode::new(Letter::new(false, b'a'), 1, 0),
+                        VisitNode::new(Letter::new(true, b'a'), 2, 0),
+                        VisitNode::new(Letter::new(false, b'b'), 1, 1),
+                        VisitNode::new(Letter::new(true, b'c'), 2, 0),
+                        VisitNode::new(Letter::new(true, b'd'), 0, 1)]);
     }
 }

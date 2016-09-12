@@ -1,16 +1,16 @@
 pub use self::byte_lines::ByteLines;
 
 mod byte_lines;
-    
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Node<T> {
+pub struct VisitNode<T> {
     pub label: T,
     pub level: usize,
     pub nth_child: usize,
 }
-impl<T> Node<T> {
+impl<T> VisitNode<T> {
     pub fn new(label: T, level: usize, nth_child: usize) -> Self {
-        Node {
+        VisitNode {
             label: label,
             level: level,
             nth_child: nth_child,
@@ -21,7 +21,7 @@ impl<T> Node<T> {
 pub trait DepthFirstTraverse {
     type Label;
     type Error;
-    fn next(&mut self) -> Option<Result<Node<Self::Label>, Self::Error>>;
+    fn next(&mut self) -> Option<Result<VisitNode<Self::Label>, Self::Error>>;
     fn size_hint(&self) -> (usize, Option<usize>) {
         (0, None)
     }
@@ -36,7 +36,7 @@ impl<T> DepthFirstIter<T> {
 impl<T> Iterator for DepthFirstIter<T>
     where T: DepthFirstTraverse
 {
-    type Item = Result<Node<T::Label>, T::Error>;
+    type Item = Result<VisitNode<T::Label>, T::Error>;
     fn next(&mut self) -> Option<Self::Item> {
         self.0.next()
     }
