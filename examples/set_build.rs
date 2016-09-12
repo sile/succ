@@ -48,7 +48,52 @@ fn main() {
                     println!("{}", String::from_utf8(word).unwrap());
                 }
             }
+
+            // let mut buf = Vec::new();
+            // let mut labels = Vec::new();
+            // for v in traversal::PatriciaTreeTraversal::new(tree.root()).into_depth_first_iter() {
+            //     let start = buf.len();
+            //     let mut is_eow = false;
+            //     for l in v.label {
+            //         buf.push(l.value);
+            //         is_eow = l.end_of_word;
+            //     }
+            //     buf.push(b'\n');
+            //     labels.push((start, is_eow));
+            // }
+            // labels.sort_by_key(|&(start, _)| &buf[start..]);
+            // println!("BUF: {}, LABELS: {}", buf.len(), labels.len());
+
+            // let lines = succ::word::DepthFirstTraversal::new(Iter {
+            //     buf: buf,
+            //     labels: labels,
+            //     i: 0,
+            // });
+            // let tree = succ::BalancedParensTree::<_>::new_builder(lines, word::Letters::new())
+            //     .build_all();
+            // println!("NODES: {}", tree.len());
+            // println!("BYTES: {}", tree.external_byte_size());
         }
         _ => unreachable!(),
     }
 }
+
+// struct Iter {
+//     buf: Vec<u8>,
+//     labels: Vec<(usize, bool)>,
+//     i: usize,
+// }
+// impl Iterator for Iter {
+//     type Item = Vec<u8>;
+//     fn next(&mut self) -> Option<Self::Item> {
+//         if self.i < self.labels.len() {
+//             let start = self.labels[self.i].0;
+//             self.i += 1;
+//             let w =
+//                 self.buf[start..].iter().take_while(|b| **b != b'\n').cloned().collect::<Vec<_>>();
+//             Some(w)
+//         } else {
+//             None
+//         }
+//     }
+// }

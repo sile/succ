@@ -1,5 +1,6 @@
 pub use self::byte_lines::ByteLines;
 pub use self::tree_traversal::TreeTraversal;
+pub use self::tree_traversal::PatriciaTreeTraversal;
 
 mod byte_lines;
 mod tree_traversal;
