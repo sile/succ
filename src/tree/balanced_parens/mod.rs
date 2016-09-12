@@ -1,3 +1,4 @@
+use std::rc::Rc;
 use std::iter;
 use std::marker::PhantomData;
 
@@ -43,8 +44,11 @@ impl<L, N> BalancedParensTree<L, N>
     where L: Labels,
           N: NndOne
 {
-    pub fn root(&self) -> Node<L, N> {
+    pub fn root(&self) -> Node<L, N, &Self> {
         Node::new(0, 0, self)
+    }
+    pub fn to_owned_root(self) -> Node<L, N, Rc<Self>> {
+        Node::new(0, 0, Rc::new(self))
     }
 }
 
@@ -118,52 +122,62 @@ impl<T, L, N> Builder<T, L, N>
     }
 }
 
-pub struct Node<'a, L: 'a, N: 'a> {
+pub struct Node<L, N, T> {
     id: NodeId,
-    label_id: usize,
-    tree: &'a BalancedParensTree<L, N>,
+    inner_id: NodeId,
+    tree: T,
+    _n: PhantomData<N>,
+    _l: PhantomData<L>,
 }
-impl<'a, L: 'a, N: 'a> Node<'a, L, N>
+impl<L, N, T> Node<L, N, T>
     where L: Labels,
-          N: NndOne
+          N: NndOne,
+          T: ::std::ops::Deref<Target = BalancedParensTree<L, N>> + Clone
 {
-    fn new(id: NodeId, label_id: usize, tree: &'a BalancedParensTree<L, N>) -> Self {
+    fn new(inner_id: NodeId, id: NodeId, tree: T) -> Self {
         Node {
             id: id,
-            label_id: label_id,
+            inner_id: inner_id,
             tree: tree,
+            _n: PhantomData,
+            _l: PhantomData,
         }
     }
 }
-impl<'a, L, N> super::Node<L::Label> for Node<'a, L, N>
+impl<L, N, T> Node<L, N, T>
+    where T: Clone
+{
+    pub fn tree(&self) -> T {
+        self.tree.clone()
+    }
+}
+
+impl<L, N, T> super::Node<L::Label> for Node<L, N, T>
     where L: Labels,
-          N: NndOne
+          N: NndOne,
+          T: ::std::ops::Deref<Target = BalancedParensTree<L, N>> + Clone
 {
     fn id(&self) -> NodeId {
         self.id
     }
     fn first_child(&self) -> Option<Edge<L::Label, Self>> {
-        let next = self.id + 1;
+        let next = self.inner_id + 1;
         if self.tree.parens.get(next as Index).unwrap().is_one() {
-            let label_id = self.label_id;
-            let child = Edge::new(self.tree.labels.get(label_id).unwrap(),
-                                  Self::new(next as NodeId, label_id + 1, &self.tree));
+            let id = self.id;
+            let child = Edge::new(self.tree.labels.get(id as usize).unwrap(),
+                                  Self::new(next, id + 1, self.tree.clone()));
             Some(child)
         } else {
             None
         }
     }
     fn next_sibling(&self) -> Option<Edge<L::Label, Self>> {
-        let close = self.tree.parens.get_close(self.id as Index).unwrap();
+        let close = self.tree.parens.get_close(self.inner_id as Index).unwrap();
         let next = close + 1;
         if self.tree.parens.get(next).unwrap_or(Bit::Zero).is_one() {
-            assert!(close >= self.id as Index,
-                    "assert: {} >= {}",
-                    close,
-                    self.id);
-            let label_id = self.label_id + (close - self.id as Index) as usize / 2;
-            Some(Edge::new(self.tree.labels.get(label_id).unwrap(),
-                           Self::new(next as NodeId, label_id + 1, &self.tree)))
+            let id = self.id + (close - self.inner_id as Index) as NodeId / 2;
+            Some(Edge::new(self.tree.labels.get(id as usize).unwrap(),
+                           Self::new(next as NodeId, id + 1, self.tree.clone())))
         } else {
             None
         }
@@ -219,7 +233,7 @@ mod test {
 
         for (i, (w1, w2)) in BufReader::new(io::Cursor::new(input.as_bytes()))
             .lines()
-            .zip(Words::new(tree.root()).map(|b| String::from_utf8(b).unwrap()))
+            .zip(Words::new(tree.to_owned_root()).map(|b| String::from_utf8(b).unwrap()))
             .enumerate() {
             let w1 = w1.unwrap();
             assert_eq!(w1, w2, "[{}] {} == {}", i, w1, w2);
