@@ -7,6 +7,7 @@ use bitwise::fixnum::Fixnum;
 use bitwise::fixnum::FixnumLike;
 use bitwise::ops::NndOne;
 use bitwise::ops::GetClose;
+use bitwise::ops::ExternalByteSize;
 
 pub type Block = u64;
 
@@ -89,6 +90,14 @@ impl<N> Parens<N>
         }
     }
 }
+impl<N> ExternalByteSize for Parens<N>
+    where N: ExternalByteSize
+{
+    fn external_byte_size(&self) -> u64 {
+        self.bits.external_byte_size() +
+        self.pioneers.as_ref().map_or(0, |p| p.external_byte_size())
+    }
+}
 impl<N> Parens<N>
     where N: NndOne
 {
@@ -136,6 +145,13 @@ impl<N> PioneerFamily<N>
             nnd: flags.iter().collect(),
             parens: Parens::new(parens),
         }
+    }
+}
+impl<N> ExternalByteSize for PioneerFamily<N>
+    where N: ExternalByteSize
+{
+    fn external_byte_size(&self) -> u64 {
+        self.nnd.external_byte_size() + self.parens.external_byte_size()
     }
 }
 impl<N> PioneerFamily<N>

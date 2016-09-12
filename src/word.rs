@@ -1,3 +1,5 @@
+use std::mem;
+
 use tree::Node;
 use tree::Edge;
 use tree::Labels;
@@ -6,6 +8,7 @@ use tree::traversal::DepthFirstIter;
 use tree::traversal::DepthFirstTraverse;
 use bitwise::Index;
 use bitwise::BitString;
+use bitwise::ops::ExternalByteSize;
 
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct Letter<T> {
@@ -32,6 +35,14 @@ impl<T> Letters<T> {
             end_of_words: BitString::new(),
             values: Vec::new(),
         }
+    }
+}
+impl<T> ExternalByteSize for Letters<T>
+    where T: Sized
+{
+    fn external_byte_size(&self) -> u64 {
+        self.end_of_words.external_byte_size() + mem::size_of_val(&self.values.len()) as u64 +
+        mem::size_of::<T>() as u64 * self.values.len() as u64
     }
 }
 impl<T> Labels for Letters<T>

@@ -7,6 +7,7 @@ use bitwise::BitString;
 use bitwise::Index;
 use bitwise::SparseOneNnd;
 use bitwise::ops::NndOne;
+use bitwise::ops::ExternalByteSize;
 use tree::traversal::DepthFirstIter;
 use tree::traversal::DepthFirstTraverse;
 use super::Edge;
@@ -38,6 +39,14 @@ impl<L, N> BalancedParensTree<L, N>
         where T: DepthFirstTraverse<Label = L::Label>
     {
         Builder::new(tree, labels)
+    }
+}
+impl<L, N> BalancedParensTree<L, N>
+    where L: ExternalByteSize,
+          N: ExternalByteSize
+{
+    pub fn external_byte_size(&self) -> u64 {
+        self.labels.external_byte_size() + self.parens.external_byte_size()
     }
 }
 impl<L, N> BalancedParensTree<L, N>
