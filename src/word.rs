@@ -57,7 +57,7 @@ impl<T> Labels for Letters<T>
         self.values
             .get(index)
             .cloned()
-            .map(|v| Letter::new(self.end_of_words.get(index as Index).unwrap().is_one(), v))
+            .map(|v| Letter::new(self.end_of_words.get(index as Index).unwrap(), v))
     }
     fn len(&self) -> usize {
         self.values.len()

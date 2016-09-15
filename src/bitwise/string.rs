@@ -35,7 +35,7 @@ impl<N> BitString<N>
     pub fn get(&self, index: Index) -> Option<Bit> {
         if index < self.len() {
             let (base, offset) = Self::base_and_offset(index);
-            Some(self.fixnums[base].get(offset))
+            Some(unsafe { self.fixnums.get_unchecked(base) }.get(offset))
         } else {
             None
         }
@@ -51,11 +51,13 @@ impl<N> BitString<N>
         self.fixnums[base as usize].set(offset, bit);
     }
     pub fn push(&mut self, bit: Bit) {
-        let (base, offset) = Self::base_and_offset(self.len);
-        if self.fixnums.len() == base as usize {
-            self.fixnums.push(Fixnum::zero());
+        if bit {
+            let (base, offset) = Self::base_and_offset(self.len);
+            while self.fixnums.len() <= base as usize {
+                self.fixnums.push(Fixnum::zero());
+            }
+            self.fixnums[base as usize].set(offset, bit);
         }
-        self.fixnums[base as usize].set(offset, bit);
         self.len += 1;
     }
     pub fn len(&self) -> Index {
@@ -66,6 +68,9 @@ impl<N> BitString<N>
     }
     pub fn iter(&self) -> Iter<N> {
         Iter::new(self)
+    }
+    pub fn one_indices(&self) -> OneIndices<N> {
+        OneIndices::new(self)
     }
     pub fn as_fixnums(&self) -> &[Fixnum<N>] {
         &self.fixnums
@@ -175,7 +180,15 @@ impl<N> SuccOne for BitString<N>
     where N: FixnumLike
 {
     fn succ_one(&self, index: Index) -> Option<Index> {
-        ops::naive_succ_one(self, index)
+        let (mut base, mut offset) = Self::base_and_offset(index);
+        while base < self.fixnums.len() {
+            if let Some(i) = self.fixnums[base].succ_one(offset) {
+                return Some(base as Index * N::bitwidth() as Index + i);
+            }
+            base += 1;
+            offset = 0;
+        }
+        None
     }
 }
 impl<N> ops::ExternalByteSize for BitString<N> {
@@ -204,7 +217,7 @@ impl<N> fmt::Display for BitString<N>
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for b in self.iter() {
-            try!(write!(f, "{}", b))
+            try!(write!(f, "{}", if b { 1 } else { 0 }))
         }
         Ok(())
     }
@@ -229,17 +242,38 @@ impl<'a, N: 'a> Iterator for Iter<'a, N>
     }
 }
 
+pub struct OneIndices<'a, N: 'a> {
+    bs: &'a BitString<N>,
+    i: Index,
+}
+impl<'a, N: 'a> OneIndices<'a, N> {
+    pub fn new(bs: &'a BitString<N>) -> Self {
+        OneIndices { bs: bs, i: 0 }
+    }
+}
+impl<'a, N: 'a> Iterator for OneIndices<'a, N>
+    where N: FixnumLike
+{
+    type Item = Index;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.bs.succ_one(self.i).map(|index| {
+            self.i = index + 1;
+            index
+        })
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
     use super::super::{Index, Rank};
-    use super::super::Bit::*;
+    use super::super::{ZERO, ONE};
     use super::super::ops::*;
 
     #[test]
     fn it_works() {
-        let bits = [Zero, One, One, One, Zero, One, Zero, Zero, One, Zero, Zero, One, One, Zero,
-                    One, One, Zero, One];
+        let bits = [ZERO, ONE, ONE, ONE, ZERO, ONE, ZERO, ZERO, ONE, ZERO, ZERO, ONE, ONE, ZERO,
+                    ONE, ONE, ZERO, ONE];
         let mut bs = BitString::<u8>::new();
         for b in &bits {
             bs.push(From::from(*b));
@@ -272,7 +306,7 @@ mod test {
 
     #[test]
     fn to_string() {
-        let bits = [Zero, One, One, One, Zero, One, Zero, Zero, One, Zero];
+        let bits = [ZERO, ONE, ONE, ONE, ZERO, ONE, ZERO, ZERO, ONE, ZERO];
         let bs = bits.iter().cloned().collect::<BitString>();
         assert_eq!(bs.to_string(), "0111010010");
     }

@@ -1,8 +1,6 @@
 use std::rc::Rc;
-use std::iter;
 use std::marker::PhantomData;
 
-use bitwise::Bit;
 use bitwise::BitString;
 use bitwise::Index;
 use bitwise::SparseOneNnd;
@@ -33,7 +31,7 @@ impl<L> BalancedParensTree<LabelVec<L>, SparseOneNnd>
 }
 impl<L, N> BalancedParensTree<L, N>
     where L: Labels,
-          N: NndOne + iter::FromIterator<Bit>
+          N: NndOne + From<BitString>
 {
     pub fn new_builder<T>(tree: T, labels: L) -> Builder<T, L, N>
         where T: DepthFirstTraverse<Label = L::Label>
@@ -84,9 +82,10 @@ pub struct Builder<T, L, N = SparseOneNnd> {
 impl<T, L, N> Builder<T, L, N>
     where T: DepthFirstTraverse,
           L: Labels<Label = T::Label>,
-          N: NndOne + iter::FromIterator<Bit>
+          N: NndOne + From<BitString>
 {
     pub fn new(tree: T, labels: L) -> Self {
+        // TODO: Support `with_capacity`
         let mut this = Builder {
             iter: DepthFirstIter::new(tree),
             labels: labels,
@@ -94,7 +93,7 @@ impl<T, L, N> Builder<T, L, N>
             prev_level: 0,
             _nnd: PhantomData,
         };
-        this.parens.push(Bit::One); // The open parenthesis of the virtual root
+        this.parens.push(true); // The open parenthesis of the virtual root
         this
     }
     pub fn build_once(&mut self) -> bool {
@@ -102,10 +101,10 @@ impl<T, L, N> Builder<T, L, N>
             let curr_level = node.level + 1;
 
             for _ in curr_level..self.prev_level + 1 {
-                self.parens.push(Bit::Zero);
+                self.parens.push(false);
             }
 
-            self.parens.push(Bit::One);
+            self.parens.push(true);
             self.labels.push(node.label);
             self.prev_level = curr_level;
             true
@@ -115,9 +114,9 @@ impl<T, L, N> Builder<T, L, N>
     }
     pub fn finish(mut self) -> BalancedParensTree<L, N> {
         for _ in 0..self.prev_level {
-            self.parens.push(Bit::Zero);
+            self.parens.push(false);
         }
-        self.parens.push(Bit::Zero); // The close parenthesis of the virtual root
+        self.parens.push(false); // The close parenthesis of the virtual root
         self.labels.shrink_to_fit();
         BalancedParensTree {
             labels: self.labels,
@@ -170,7 +169,7 @@ impl<L, N, T> super::Node<L::Label> for Node<L, N, T>
     }
     fn first_child(&self) -> Option<Edge<L::Label, Self>> {
         let next = self.inner_id + 1;
-        if self.tree.parens.get(next as Index).unwrap().is_one() {
+        if self.tree.parens.get(next as Index).unwrap() {
             let id = self.id;
             let child = Edge::new(self.tree.labels.get(id as usize).unwrap(),
                                   Self::new(next, id + 1, self.tree.clone()));
@@ -182,7 +181,7 @@ impl<L, N, T> super::Node<L::Label> for Node<L, N, T>
     fn next_sibling(&self) -> Option<Edge<L::Label, Self>> {
         let close = self.tree.parens.get_close(self.inner_id as Index).unwrap();
         let next = close + 1;
-        if self.tree.parens.get(next).unwrap_or(Bit::Zero).is_one() {
+        if self.tree.parens.get(next).unwrap_or(false) {
             let id = self.id + (close - self.inner_id as Index) as NodeId / 2;
             Some(Edge::new(self.tree.labels.get(id as usize).unwrap(),
                            Self::new(next as NodeId, id + 1, self.tree.clone())))

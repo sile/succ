@@ -1,7 +1,7 @@
 use std;
 use std::iter;
 
-use super::{Bit, Rank, Index};
+use super::{Bit, Rank, Index, BitString};
 use super::ops;
 use super::ops::{RankBit, SelectOne, PredOne, SuccOne};
 
@@ -17,9 +17,9 @@ pub struct SparseOneNnd {
     middles: Vec<Base<u16>>,
     larges: Vec<Base<u32>>,
 }
-impl iter::FromIterator<Bit> for SparseOneNnd {
-    fn from_iter<I>(bits: I) -> Self
-        where I: IntoIterator<Item = Bit>
+impl SparseOneNnd {
+    fn from_one_indices<I>(iter: I) -> Self
+        where I: Iterator<Item = Index>
     {
         let mut larges = Vec::new();
         let mut middles = Vec::new();
@@ -28,31 +28,31 @@ impl iter::FromIterator<Bit> for SparseOneNnd {
 
         let mut rank = 0;
         let mut prev_index = 0;
-        let mut middle_prev = Base::new(0, 0);
-        let mut large_prev;
+        let mut large_prev = Base::new(0, 0);
 
-        for (i, b) in bits.into_iter().enumerate() {
+        let mut next_small_i = 0;
+        for one_index in iter {
+            let one_index = one_index as usize;
             let small_base = smalles.len();
-            if i % SMALL_SIZE == 0 {
+            while next_small_i <= one_index as usize {
                 small_count_index = smalles.len();
                 smalles.push(0);
-                prev_index = i;
+                prev_index = next_small_i;
+
+                if next_small_i % LARGE_SIZE == 0 {
+                    large_prev = Base::new(small_base, rank);
+                    larges.push(Base::new(large_prev.small_index as u32, large_prev.rank as u32));
+                }
+                if next_small_i % MIDDLE_SIZE == 0 {
+                    middles.push(Base::new((small_base - large_prev.small_index) as u16,
+                                           (rank - large_prev.rank) as u16));
+                }
+                next_small_i += SMALL_SIZE;
             }
-            if i % LARGE_SIZE == 0 {
-                large_prev = Base::new(small_base, rank);
-                middle_prev = large_prev.clone();
-                larges.push(Base::new(large_prev.small_index as u32, large_prev.rank as u32));
-            }
-            if i % MIDDLE_SIZE == 0 {
-                middles.push(Base::new((small_base - middle_prev.small_index) as u16,
-                                       (rank - middle_prev.rank) as u16));
-            }
-            if b.is_zero() {
-                continue;
-            }
-            debug_assert!((i - prev_index) < 0x100);
+
+            debug_assert!((one_index - prev_index) < 0x100);
             rank += 1;
-            smalles.push((i - prev_index) as u8);
+            smalles.push((one_index - prev_index) as u8);
             smalles[small_count_index] += 1;
         }
 
@@ -65,6 +65,18 @@ impl iter::FromIterator<Bit> for SparseOneNnd {
             middles: middles,
             smalles: smalles,
         }
+    }
+}
+impl iter::FromIterator<Bit> for SparseOneNnd {
+    fn from_iter<I>(bits: I) -> Self
+        where I: IntoIterator<Item = Bit>
+    {
+        Self::from_one_indices(bits.into_iter().enumerate().filter(|e| e.1).map(|e| e.0 as Index))
+    }
+}
+impl From<BitString> for SparseOneNnd {
+    fn from(bits: BitString) -> Self {
+        Self::from_one_indices(bits.one_indices())
     }
 }
 impl RankBit for SparseOneNnd {

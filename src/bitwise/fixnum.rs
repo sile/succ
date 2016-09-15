@@ -53,7 +53,7 @@ impl<T> Fixnum<T>
     }
     pub fn set(&mut self, index: Index, bit: Bit) {
         let x = self.0;
-        if bit.is_one() {
+        if bit {
             self.0 = x | T::one() << index;
         } else {
             self.0 = x ^ (T::one() << index) & x;
@@ -168,7 +168,7 @@ impl<T> PredOne for Fixnum<T>
     where T: FixnumLike
 {
     fn pred_one(&self, index: Index) -> Option<Index> {
-        if self.get(index).is_one() {
+        if self.get(index) {
             Some(index)
         } else {
             let mut x = self.0 & ((T::one() << index) - T::one());
@@ -205,7 +205,7 @@ impl<T> SuccOne for Fixnum<T>
     where T: FixnumLike
 {
     fn succ_one(&self, index: Index) -> Option<Index> {
-        if self.get(index).is_one() {
+        if self.get(index) {
             Some(index)
         } else {
             let x = self.0 ^ (self.0 & ((T::one() << index) - T::one()));
@@ -224,7 +224,7 @@ impl<T> GetClose for Fixnum<T>
     fn get_close(&self, index: Index) -> Option<Index> {
         let mut level = 0;
         for i in index..T::bitwidth() as Index {
-            if self.get(i).is_one() {
+            if self.get(i) {
                 level += 1;
             } else {
                 level -= 1;
@@ -241,7 +241,7 @@ impl<T> fmt::Display for Fixnum<T>
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for i in 0..T::bitwidth() {
-            try!(write!(f, "{}", self.get(i as Index)));
+            try!(write!(f, "{}", if self.get(i as Index) { 1 } else { 0 }));
         }
         Ok(())
     }
@@ -294,7 +294,7 @@ impl U64Like for u64 {
 mod test {
     use std;
     use super::*;
-    use super::super::Bit::*;
+    use super::super::{ZERO, ONE};
     use super::super::ops::{RankBit, SelectZero, SelectOne};
     use super::super::ops::{PredZero, PredOne, SuccZero, SuccOne};
 
@@ -305,17 +305,17 @@ mod test {
     #[test]
     fn get_and_set() {
         let mut block = f(0b11010);
-        assert_eq!(block.get(0), Zero);
-        assert_eq!(block.get(1), One);
-        assert_eq!(block.get(2), Zero);
-        assert_eq!(block.get(3), One);
-        assert_eq!(block.get(4), One);
+        assert_eq!(block.get(0), ZERO);
+        assert_eq!(block.get(1), ONE);
+        assert_eq!(block.get(2), ZERO);
+        assert_eq!(block.get(3), ONE);
+        assert_eq!(block.get(4), ONE);
 
-        block.set(3, Zero);
+        block.set(3, ZERO);
         assert_eq!(block, f(0b10010));
-        block.set(3, Zero);
+        block.set(3, ZERO);
         assert_eq!(block, f(0b10010));
-        block.set(3, One);
+        block.set(3, ONE);
         assert_eq!(block, f(0b11010));
     }
 

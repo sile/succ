@@ -1,3 +1,4 @@
+use bitwise;
 use super::Bit;
 use super::Rank;
 use super::Index;
@@ -125,7 +126,7 @@ impl<T> RankBit for LinearFid<T>
 {
     fn rank_one(&self, index: Index) -> Rank {
         assert_eq!(index + 1, (index + 1) as usize as Index);
-        self.iter.clone().take((index + 1) as usize).filter(|b| b.is_one()).count() as Rank
+        self.iter.clone().take((index + 1) as usize).filter(|b| *b).count() as Rank
     }
 }
 impl<T> SelectZero for LinearFid<T>
@@ -139,7 +140,7 @@ impl<T> SelectZero for LinearFid<T>
             self.iter
                 .clone()
                 .enumerate()
-                .filter(|&(_, b)| b.is_zero())
+                .filter(|&(_, b)| !b)
                 .map(|(i, _)| i as Index)
                 .nth(rank as usize - 1)
         }
@@ -156,7 +157,7 @@ impl<T> SelectOne for LinearFid<T>
             self.iter
                 .clone()
                 .enumerate()
-                .filter(|&(_, b)| b.is_one())
+                .filter(|&(_, b)| b)
                 .map(|(i, _)| i as Index)
                 .nth(rank as usize - 1)
         }
@@ -171,7 +172,7 @@ impl<T> PredZero for LinearFid<T>
             .clone()
             .take((index + 1) as usize)
             .enumerate()
-            .filter(|&(_, b)| b.is_zero())
+            .filter(|&(_, b)| !b)
             .map(|(i, _)| i as Index)
             .last()
     }
@@ -185,7 +186,7 @@ impl<T> PredOne for LinearFid<T>
             .clone()
             .take((index + 1) as usize)
             .enumerate()
-            .filter(|&(_, b)| b.is_one())
+            .filter(|&(_, b)| b)
             .map(|(i, _)| i as Index)
             .last()
     }
@@ -196,10 +197,10 @@ impl<T> SuccZero for LinearFid<T>
     fn succ_zero(&self, index: Index) -> Option<Index> {
         assert_eq!(index, index as usize as Index);
         let mut suffix = self.iter.clone().skip(index as usize);
-        if suffix.next() == Some(Bit::Zero) {
+        if suffix.next() == Some(bitwise::ZERO) {
             Some(index)
         } else {
-            suffix.position(|b| b.is_zero()).map(|i| index + i as Index + 1)
+            suffix.position(|b| !b).map(|i| index + i as Index + 1)
         }
     }
 }
@@ -209,10 +210,10 @@ impl<T> SuccOne for LinearFid<T>
     fn succ_one(&self, index: Index) -> Option<Index> {
         assert_eq!(index, index as usize as Index);
         let mut suffix = self.iter.clone().skip(index as usize);
-        if suffix.next() == Some(Bit::One) {
+        if suffix.next() == Some(bitwise::ONE) {
             Some(index)
         } else {
-            suffix.position(|b| b.is_one()).map(|i| index + i as Index + 1)
+            suffix.position(|b| b).map(|i| index + i as Index + 1)
         }
     }
 }

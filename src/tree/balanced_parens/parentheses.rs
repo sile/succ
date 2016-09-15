@@ -1,5 +1,3 @@
-use std::iter;
-
 use bitwise;
 use bitwise::Bit;
 use bitwise::Index;
@@ -13,8 +11,8 @@ pub type Block = u64;
 
 pub type BitString = bitwise::BitString<Block>;
 
-const OPEN: Bit = Bit::One;
-const CLOSE: Bit = Bit::Zero;
+const OPEN: Bit = bitwise::ONE;
+const CLOSE: Bit = bitwise::ZERO;
 
 const BLOCK_SIZE: Index = 64; // TODO
 
@@ -76,7 +74,7 @@ pub struct Parens<N> {
     pioneers: Option<Box<PioneerFamily<N>>>,
 }
 impl<N> Parens<N>
-    where N: NndOne + iter::FromIterator<Bit>
+    where N: NndOne + From<BitString>
 {
     pub fn new(bits: BitString) -> Self {
         let pioneers = if bits.len() > Block::bitwidth() as Index {
@@ -137,12 +135,12 @@ struct PioneerFamily<N> {
     parens: Parens<N>,
 }
 impl<N> PioneerFamily<N>
-    where N: NndOne + iter::FromIterator<Bit>
+    where N: NndOne + From<BitString>
 {
     fn new(bits: &BitString) -> Self {
         let (flags, parens) = extract_pioneers(bits);
         PioneerFamily {
-            nnd: flags.iter().collect(),
+            nnd: From::from(flags),
             parens: Parens::new(parens),
         }
     }
@@ -180,7 +178,7 @@ fn extract_pioneers(bits: &BitString) -> (BitString, BitString) {
 
     let mut last_far = None;
     for (i, b) in bits.iter().enumerate() {
-        if b.is_one() {
+        if b {
             // open parenthesis
             stack.push(i);
         } else {
@@ -194,8 +192,8 @@ fn extract_pioneers(bits: &BitString) -> (BitString, BitString) {
             // far parenthesis pair
             if let Some((last_open, last_close)) = last_far.take() {
                 if block(last_open) != block(open) || block(last_close) != block(close) {
-                    flags.set(last_open, Bit::One);
-                    flags.set(last_close, Bit::One);
+                    flags.set(last_open, true);
+                    flags.set(last_close, true);
                 }
             }
             last_far = Some((open, close));
@@ -204,12 +202,12 @@ fn extract_pioneers(bits: &BitString) -> (BitString, BitString) {
     assert!(stack.is_empty(), "STACK: {:?}", stack);
     assert_eq!(last_far, Some((0, bits.len() - 1)));
     let (open, close) = last_far.unwrap();
-    flags.set(open, Bit::One);
-    flags.set(close, Bit::One);
+    flags.set(open, true);
+    flags.set(close, true);
 
     let parens = bits.iter()
         .zip(flags.iter())
-        .filter(|&(_, p)| p.is_one())
+        .filter(|&(_, p)| p)
         .map(|(bit, _)| bit)
         .collect::<BitString>();
     (flags, parens)
