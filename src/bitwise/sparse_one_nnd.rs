@@ -87,8 +87,11 @@ impl RankBit for SparseOneNnd {
         let large_base = &self.larges[large_index];
         // let large_offset = large_index as Index * LARGE_SIZE as Index;
 
-        let middle_index = (index / MIDDLE_SIZE as Index) as usize;
-        let middle_base = &self.middles[middle_index];
+        //let middle_index = (index / MIDDLE_SIZE as Index) as usize;
+        let middle_index = ((index / MIDDLE_SIZE as Index) as usize)
+            .min(self.middles.len() - 1);
+        //let middle_base = &self.middles[middle_index];
+        let middle_base  = &self.middles[middle_index];
         let middle_offset = middle_index as Index * MIDDLE_SIZE as Index;
 
         let mut small_index = large_base.small_index as usize + middle_base.small_index as usize;
@@ -130,8 +133,10 @@ impl SelectOne for SparseOneNnd {
         let large_index = i as Index * LARGE_SIZE as Index;
         let middle_rank = rank - large_base.rank as Rank;
 
+        //let middle_start = i * MIDDLE_COUNT;
         let middle_start = i * MIDDLE_COUNT;
-        let middle_end = ::std::cmp::min(self.middles.len(), middle_start + MIDDLE_COUNT);
+        //let middle_end = ::std::cmp::min(self.middles.len(), middle_start + MIDDLE_COUNT);
+        let middle_end   = (middle_start + MIDDLE_COUNT).min(self.middles.len());
         let middles = &self.middles[middle_start..middle_end];
         {
             let i = middles.binary_search_by_key(&middle_rank, |e| e.rank as Rank)
