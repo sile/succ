@@ -51,11 +51,16 @@ impl<N> BitString<N>
         self.fixnums[base as usize].set(offset, bit);
     }
     pub fn push(&mut self, bit: Bit) {
+        
+        //let (base, offset) = Self::base_and_offset(self.len);
+        let (base, offset) = Self::base_and_offset(self.len);
+        //while self.fixnums.len() <= base as usize {
+            //self.fixnums.push(Fixnum::zero());
+        //}
+        while self.fixnums.len() <= base as usize {
+            self.fixnums.push(Fixnum::zero());
+        }
         if bit {
-            let (base, offset) = Self::base_and_offset(self.len);
-            while self.fixnums.len() <= base as usize {
-                self.fixnums.push(Fixnum::zero());
-            }
             self.fixnums[base as usize].set(offset, bit);
         }
         self.len += 1;
