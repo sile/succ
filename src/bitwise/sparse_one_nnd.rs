@@ -81,7 +81,9 @@ impl From<BitString> for SparseOneNnd {
 }
 impl RankBit for SparseOneNnd {
     fn rank_one(&self, index: Index) -> Rank {
-        let large_index = (index / LARGE_SIZE as Index) as usize;
+        //let large_index = (index / LARGE_SIZE as Index) as usize;
+        let large_index = ((index / LARGE_SIZE as Index) as usize)
+             .min(self.larges.len() - 1); 
         let large_base = &self.larges[large_index];
         // let large_offset = large_index as Index * LARGE_SIZE as Index;
 
@@ -118,9 +120,12 @@ impl SelectOne for SparseOneNnd {
         let rank = rank - 1;
 
         //
+        //let i = self.larges
+            //.binary_search_by_key(&rank, |e| e.rank as Rank)
+            //.unwrap_or_else(|i| i - 1);
         let i = self.larges
-            .binary_search_by_key(&rank, |e| e.rank as Rank)
-            .unwrap_or_else(|i| i - 1);
+             .binary_search_by_key(&rank, |e| e.rank as Rank)
+             .unwrap_or_else(|i| i.saturating_sub(1));
         let large_base = &self.larges[i];
         let large_index = i as Index * LARGE_SIZE as Index;
         let middle_rank = rank - large_base.rank as Rank;
@@ -171,17 +176,16 @@ impl ops::ExternalByteSize for SparseOneNnd {
     }
 }
 
-#[derive(Debug, Clone)]
-struct Base<T> {
+#[derive(Debug, Clone, Copy)]        
+struct Base<T: Copy> {
     small_index: T,
-    rank: T,
+    rank:        T,
 }
-impl<T> Base<T> {
+
+impl<T: Copy> Base<T> {                
+    #[inline]
     fn new(small_index: T, rank: T) -> Self {
-        Base {
-            small_index: small_index,
-            rank: rank,
-        }
+        Base { small_index, rank }
     }
 }
 
