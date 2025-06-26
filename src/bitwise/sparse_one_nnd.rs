@@ -15,7 +15,7 @@ const LARGE_SIZE: usize = MIDDLE_SIZE * MIDDLE_COUNT;
 pub struct SparseOneNnd {
     smalles: Vec<u8>,
     middles: Vec<Base<u16>>,
-    larges: Vec<Base<u32>>,
+    larges: Vec<Base<u64>>,
 }
 impl SparseOneNnd {
     fn from_one_indices<I>(iter: I) -> Self
@@ -41,7 +41,7 @@ impl SparseOneNnd {
 
                 if next_small_i % LARGE_SIZE == 0 {
                     large_prev = Base::new(small_base, rank);
-                    larges.push(Base::new(large_prev.small_index as u32, large_prev.rank as u32));
+                    larges.push(Base::new(large_prev.small_index as u64, large_prev.rank as u64));
                 }
                 if next_small_i % MIDDLE_SIZE == 0 {
                     middles.push(Base::new((small_base - large_prev.small_index) as u16,
@@ -167,7 +167,7 @@ impl ops::ExternalByteSize for SparseOneNnd {
     fn external_byte_size(&self) -> u64 {
         self.smalles.len() as u64 +
         self.middles.len() as u64 * std::mem::size_of::<Base<u16>>() as u64 +
-        self.larges.len() as u64 * std::mem::size_of::<Base<u32>>() as u64
+        self.larges.len() as u64 * std::mem::size_of::<Base<u64>>() as u64
     }
 }
 
