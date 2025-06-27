@@ -241,7 +241,7 @@ impl<T> fmt::Display for Fixnum<T>
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for i in 0..T::bitwidth() {
-            try!(write!(f, "{}", if self.get(i as Index) { 1 } else { 0 }));
+            write!(f, "{}", if self.get(i as Index) { 1 } else { 0 })?;
         }
         Ok(())
     }
