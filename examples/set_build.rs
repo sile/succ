@@ -3,8 +3,8 @@ use std::collections::HashSet;
 use std::io;
 use std::io::BufRead;
 use std::iter::FromIterator;
-use succ::tree::traversal;
-use succ::word;
+use succparen::tree::traversal;
+use succparen::word;
 
 fn main() -> noargs::Result<()> {
     let mut args = noargs::raw_args();
@@ -49,8 +49,8 @@ fn main() -> noargs::Result<()> {
         }
         "parentheses" => {
             let lines = traversal::ByteLines::new(stdin.lock()).into_depth_first_traversal();
-            let tree =
-                succ::BalancedParensTree::<_>::new_builder(lines, word::Letters::new()).build_all();
+            let tree = succparen::BalancedParensTree::<_>::new_builder(lines, word::Letters::new())
+                .build_all();
             println!("NODES: {}", tree.len());
             println!("BYTES: {}", tree.external_byte_size());
             if show_words {
