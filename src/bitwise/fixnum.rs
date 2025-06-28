@@ -156,8 +156,8 @@ where
             let low = (x >> offset) & (width - T::one());
             width = width >> 1;
             if (low.to_u64() as Rank) < rank {
-                rank = rank - low.to_u64() as Rank;
-                offset = offset + width.to_u64() as Index;
+                rank -= low.to_u64() as Rank;
+                offset += width.to_u64() as Index;
             }
         }
         Some(offset)

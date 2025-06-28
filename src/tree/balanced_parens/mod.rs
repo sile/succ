@@ -72,6 +72,9 @@ where
     pub fn len(&self) -> usize {
         self.labels.len()
     }
+    pub fn is_empty(&self) -> bool {
+        self.labels.len() == 0
+    }
 }
 impl<L, N> BalancedParensTree<L, N> {
     pub fn labels(&self) -> &L {
@@ -96,7 +99,7 @@ where
         // TODO: Support `with_capacity`
         let mut this = Builder {
             iter: DepthFirstIter::new(tree),
-            labels: labels,
+            labels,
             parens: BitString::new(),
             prev_level: 0,
             _nnd: PhantomData,
@@ -152,9 +155,9 @@ where
 {
     fn new(inner_id: NodeId, id: NodeId, tree: T) -> Self {
         Node {
-            id: id,
-            inner_id: inner_id,
-            tree: tree,
+            id,
+            inner_id,
+            tree,
             _n: PhantomData,
             _l: PhantomData,
         }
