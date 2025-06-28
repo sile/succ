@@ -4,10 +4,10 @@ pub use self::string::BitString;
 #[doc(inline)]
 pub use self::sparse_one_nnd::SparseOneNnd;
 
-pub mod ops;
 pub mod fixnum;
-pub mod string;
+pub mod ops;
 pub mod sparse_one_nnd;
+pub mod string;
 
 pub type Index = u64;
 pub type Rank = u64;

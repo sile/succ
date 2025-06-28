@@ -1,14 +1,14 @@
-use std::mem;
 use std::fmt;
 use std::iter;
+use std::mem;
 
-use super::Bit;
-use super::Rank;
-use super::Index;
 use super::fixnum::Fixnum;
 use super::fixnum::FixnumLike;
 use super::ops;
-use super::ops::{RankBit, SelectZero, SelectOne, PredZero, PredOne, SuccZero, SuccOne};
+use super::ops::{PredOne, PredZero, RankBit, SelectOne, SelectZero, SuccOne, SuccZero};
+use super::Bit;
+use super::Index;
+use super::Rank;
 
 #[derive(Debug, Clone)]
 pub struct BitString<N = u64> {
@@ -21,7 +21,8 @@ impl Default for BitString<u64> {
     }
 }
 impl<N> BitString<N>
-    where N: FixnumLike
+where
+    N: FixnumLike,
 {
     pub fn new() -> Self {
         Self::with_capacity(0)
@@ -66,10 +67,10 @@ impl<N> BitString<N>
     pub fn shrink_to_fit(&mut self) {
         self.fixnums.shrink_to_fit();
     }
-    pub fn iter(&self) -> Iter<'_,N> {
+    pub fn iter(&self) -> Iter<'_, N> {
         Iter::new(self)
     }
-    pub fn one_indices(&self) -> OneIndices<'_,N> {
+    pub fn one_indices(&self) -> OneIndices<'_, N> {
         OneIndices::new(self)
     }
     pub fn as_fixnums(&self) -> &[Fixnum<N>] {
@@ -80,11 +81,15 @@ impl<N> BitString<N>
     }
 
     fn base_and_offset(index: Index) -> (usize, Index) {
-        ((index / N::bitwidth() as Index) as usize, index % N::bitwidth() as Index)
+        (
+            (index / N::bitwidth() as Index) as usize,
+            index % N::bitwidth() as Index,
+        )
     }
 }
 impl<N> RankBit for BitString<N>
-    where N: FixnumLike
+where
+    N: FixnumLike,
 {
     fn rank_one(&self, index: Index) -> Rank {
         let mut rank = 0;
@@ -102,7 +107,8 @@ impl<N> RankBit for BitString<N>
     }
 }
 impl<N> SelectZero for BitString<N>
-    where N: FixnumLike
+where
+    N: FixnumLike,
 {
     fn select_zero(&self, rank: Rank) -> Option<Index> {
         if rank == 0 {
@@ -133,7 +139,8 @@ impl<N> SelectZero for BitString<N>
     }
 }
 impl<N> SelectOne for BitString<N>
-    where N: FixnumLike
+where
+    N: FixnumLike,
 {
     fn select_one(&self, rank: Rank) -> Option<Index> {
         if rank == 0 {
@@ -156,28 +163,32 @@ impl<N> SelectOne for BitString<N>
     }
 }
 impl<N> PredZero for BitString<N>
-    where N: FixnumLike
+where
+    N: FixnumLike,
 {
     fn pred_zero(&self, index: Index) -> Option<Index> {
         ops::naive_pred_zero(self, index)
     }
 }
 impl<N> PredOne for BitString<N>
-    where N: FixnumLike
+where
+    N: FixnumLike,
 {
     fn pred_one(&self, index: Index) -> Option<Index> {
         ops::naive_pred_one(self, index)
     }
 }
 impl<N> SuccZero for BitString<N>
-    where N: FixnumLike
+where
+    N: FixnumLike,
 {
     fn succ_zero(&self, index: Index) -> Option<Index> {
         ops::naive_succ_zero(self, index)
     }
 }
 impl<N> SuccOne for BitString<N>
-    where N: FixnumLike
+where
+    N: FixnumLike,
 {
     fn succ_one(&self, index: Index) -> Option<Index> {
         let (mut base, mut offset) = Self::base_and_offset(index);
@@ -198,10 +209,12 @@ impl<N> ops::ExternalByteSize for BitString<N> {
 }
 
 impl<N> iter::FromIterator<Bit> for BitString<N>
-    where N: FixnumLike
+where
+    N: FixnumLike,
 {
     fn from_iter<T>(iter: T) -> Self
-        where T: IntoIterator<Item = Bit>
+    where
+        T: IntoIterator<Item = Bit>,
     {
         let iter = iter.into_iter();
         let mut bs = Self::with_capacity(iter.size_hint().1.unwrap_or(0) as u64);
@@ -213,7 +226,8 @@ impl<N> iter::FromIterator<Bit> for BitString<N>
 }
 
 impl<N> fmt::Display for BitString<N>
-    where N: FixnumLike
+where
+    N: FixnumLike,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for b in self.iter() {
@@ -233,7 +247,8 @@ impl<'a, N: 'a> Iter<'a, N> {
     }
 }
 impl<'a, N: 'a> Iterator for Iter<'a, N>
-    where N: FixnumLike
+where
+    N: FixnumLike,
 {
     type Item = Bit;
     fn next(&mut self) -> Option<Self::Item> {
@@ -252,7 +267,8 @@ impl<'a, N: 'a> OneIndices<'a, N> {
     }
 }
 impl<'a, N: 'a> Iterator for OneIndices<'a, N>
-    where N: FixnumLike
+where
+    N: FixnumLike,
 {
     type Item = Index;
     fn next(&mut self) -> Option<Self::Item> {
@@ -265,15 +281,17 @@ impl<'a, N: 'a> Iterator for OneIndices<'a, N>
 
 #[cfg(test)]
 mod test {
-    use super::*;
-    use super::super::{Index, Rank};
-    use super::super::{ZERO, ONE};
     use super::super::ops::*;
+    use super::super::{Index, Rank};
+    use super::super::{ONE, ZERO};
+    use super::*;
 
     #[test]
     fn it_works() {
-        let bits = [ZERO, ONE, ONE, ONE, ZERO, ONE, ZERO, ZERO, ONE, ZERO, ZERO, ONE, ONE, ZERO,
-                    ONE, ONE, ZERO, ONE];
+        let bits = [
+            ZERO, ONE, ONE, ONE, ZERO, ONE, ZERO, ZERO, ONE, ZERO, ZERO, ONE, ONE, ZERO, ONE, ONE,
+            ZERO, ONE,
+        ];
         let mut bs = BitString::<u8>::new();
         for b in &bits {
             bs.push(From::from(*b));
@@ -289,10 +307,14 @@ mod test {
             assert_eq!(bs.rank_one(i as Index), expected.rank_one(i as Index));
 
             // select
-            assert_eq!(bs.select_zero((i + 1) as Rank),
-                       expected.select_zero((i + 1) as Rank));
-            assert_eq!(bs.select_one((i + 1) as Rank),
-                       expected.select_one((i + 1) as Rank));
+            assert_eq!(
+                bs.select_zero((i + 1) as Rank),
+                expected.select_zero((i + 1) as Rank)
+            );
+            assert_eq!(
+                bs.select_one((i + 1) as Rank),
+                expected.select_one((i + 1) as Rank)
+            );
 
             // pred
             assert_eq!(bs.pred_zero(i as Index), expected.pred_zero(i as Index));

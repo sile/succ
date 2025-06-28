@@ -1,37 +1,40 @@
-use std::mem;
 use std::fmt;
+use std::mem;
 use std::ops::{Add, BitAnd, BitOr, BitXor, Not, Shl, Shr, Sub};
 
-use super::Bit;
 use super::ops::GetClose;
 use super::ops::RankBit;
-use super::ops::{SelectZero, SelectOne};
-use super::ops::{PredZero, PredOne};
-use super::ops::{SuccZero, SuccOne};
+use super::ops::{PredOne, PredZero};
+use super::ops::{SelectOne, SelectZero};
+use super::ops::{SuccOne, SuccZero};
+use super::Bit;
 use super::{Index, Rank};
 
 pub trait FixnumLike
-    where Self: Sized + Copy + Eq + U64Like,
-          Self: Add<Output = Self> + Sub<Output = Self> + Not<Output = Self>,
-          Self: BitAnd<Output = Self> + BitOr<Output = Self> + BitXor<Output = Self>,
-          Self: Shr<Index, Output = Self> + Shl<Index, Output = Self>
+where
+    Self: Sized + Copy + Eq + U64Like,
+    Self: Add<Output = Self> + Sub<Output = Self> + Not<Output = Self>,
+    Self: BitAnd<Output = Self> + BitOr<Output = Self> + BitXor<Output = Self>,
+    Self: Shr<Index, Output = Self> + Shl<Index, Output = Self>,
 {
     fn bitwidth() -> usize {
         mem::size_of::<Self>() * 8
     }
 }
 impl<T> FixnumLike for T
-    where T: Sized + Copy + Eq + U64Like,
-          T: Add<Output = T> + Sub<Output = T> + Not<Output = T>,
-          T: BitAnd<Output = T> + BitOr<Output = T> + BitXor<Output = T>,
-          T: Shr<Index, Output = T> + Shl<Index, Output = T>
+where
+    T: Sized + Copy + Eq + U64Like,
+    T: Add<Output = T> + Sub<Output = T> + Not<Output = T>,
+    T: BitAnd<Output = T> + BitOr<Output = T> + BitXor<Output = T>,
+    T: Shr<Index, Output = T> + Shl<Index, Output = T>,
 {
 }
 
 #[derive(Debug, Default, Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Fixnum<T>(T);
 impl<T> Fixnum<T>
-    where T: FixnumLike
+where
+    T: FixnumLike,
 {
     pub fn new(n: T) -> Self {
         Fixnum(n)
@@ -81,7 +84,8 @@ impl<T> Fixnum<T>
     }
 }
 impl<T> RankBit for Fixnum<T>
-    where T: FixnumLike
+where
+    T: FixnumLike,
 {
     fn rank_one(&self, index: Index) -> Rank {
         debug_assert!(index < Self::bitwidth() as Index);
@@ -94,14 +98,16 @@ impl<T> RankBit for Fixnum<T>
     }
 }
 impl<T> SelectZero for Fixnum<T>
-    where T: FixnumLike
+where
+    T: FixnumLike,
 {
     fn select_zero(&self, rank: Rank) -> Option<Index> {
         Fixnum(!self.0).select_one(rank)
     }
 }
 impl<T> SelectOne for Fixnum<T>
-    where T: FixnumLike
+where
+    T: FixnumLike,
 {
     fn select_one(&self, rank: Rank) -> Option<Index> {
         if rank == 0 {
@@ -109,8 +115,8 @@ impl<T> SelectOne for Fixnum<T>
         }
         let x0 = self.0;
         let x1 = x0 - ((x0 >> 1) & T::from_u64(0x5555555555555555));
-        let x2 = (x1 & T::from_u64(0x3333333333333333)) +
-                 ((x1 >> 2) & T::from_u64(0x3333333333333333));
+        let x2 =
+            (x1 & T::from_u64(0x3333333333333333)) + ((x1 >> 2) & T::from_u64(0x3333333333333333));
         let x3 = if Self::bitwidth() == 8 {
             x2 + (x2 >> 4)
         } else {
@@ -131,8 +137,8 @@ impl<T> SelectOne for Fixnum<T>
         } else {
             x5
         };
-        let pop_count = (x6 & (T::from_u64((Self::bitwidth() as u64) << 1) - T::one()))
-            .to_u64() as Rank;
+        let pop_count =
+            (x6 & (T::from_u64((Self::bitwidth() as u64) << 1) - T::one())).to_u64() as Rank;
         if pop_count < rank {
             return None;
         }
@@ -158,14 +164,16 @@ impl<T> SelectOne for Fixnum<T>
     }
 }
 impl<T> PredZero for Fixnum<T>
-    where T: FixnumLike
+where
+    T: FixnumLike,
 {
     fn pred_zero(&self, index: Index) -> Option<Index> {
         Fixnum(!self.0).pred_one(index)
     }
 }
 impl<T> PredOne for Fixnum<T>
-    where T: FixnumLike
+where
+    T: FixnumLike,
 {
     fn pred_one(&self, index: Index) -> Option<Index> {
         if self.get(index) {
@@ -195,14 +203,16 @@ impl<T> PredOne for Fixnum<T>
     }
 }
 impl<T> SuccZero for Fixnum<T>
-    where T: FixnumLike
+where
+    T: FixnumLike,
 {
     fn succ_zero(&self, index: Index) -> Option<Index> {
         Fixnum(!self.0).succ_one(index)
     }
 }
 impl<T> SuccOne for Fixnum<T>
-    where T: FixnumLike
+where
+    T: FixnumLike,
 {
     fn succ_one(&self, index: Index) -> Option<Index> {
         if self.get(index) {
@@ -219,7 +229,8 @@ impl<T> SuccOne for Fixnum<T>
     }
 }
 impl<T> GetClose for Fixnum<T>
-    where T: FixnumLike
+where
+    T: FixnumLike,
 {
     fn get_close(&self, index: Index) -> Option<Index> {
         let mut level = 0;
@@ -237,7 +248,8 @@ impl<T> GetClose for Fixnum<T>
     }
 }
 impl<T> fmt::Display for Fixnum<T>
-    where T: FixnumLike
+where
+    T: FixnumLike,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for i in 0..T::bitwidth() {
@@ -292,11 +304,11 @@ impl U64Like for u64 {
 
 #[cfg(test)]
 mod test {
-    use std;
+    use super::super::ops::{PredOne, PredZero, SuccOne, SuccZero};
+    use super::super::ops::{RankBit, SelectOne, SelectZero};
+    use super::super::{ONE, ZERO};
     use super::*;
-    use super::super::{ZERO, ONE};
-    use super::super::ops::{RankBit, SelectZero, SelectOne};
-    use super::super::ops::{PredZero, PredOne, SuccZero, SuccOne};
+    use std;
 
     fn f(n: u64) -> Fixnum<u64> {
         Fixnum(n)
@@ -368,7 +380,9 @@ mod test {
 
     #[test]
     fn to_string() {
-        assert_eq!(Fixnum(0b0011110101000001u16).to_string(),
-                   "1000001010111100");
+        assert_eq!(
+            Fixnum(0b0011110101000001u16).to_string(),
+            "1000001010111100"
+        );
     }
 }

@@ -1,7 +1,7 @@
-use bitwise;
 use super::Bit;
-use super::Rank;
 use super::Index;
+use super::Rank;
+use bitwise;
 
 pub trait ExternalByteSize {
     fn external_byte_size(&self) -> u64;
@@ -78,19 +78,22 @@ pub trait Fid: NndZero + NndOne {}
 impl<T> Fid for T where T: NndZero + NndOne {}
 
 pub fn naive_pred_zero<T>(this: &T, index: Index) -> Option<Index>
-    where T: BitVectorZero
+where
+    T: BitVectorZero,
 {
     this.select_zero(this.rank_zero(index))
 }
 
 pub fn naive_pred_one<T>(this: &T, index: Index) -> Option<Index>
-    where T: BitVectorOne
+where
+    T: BitVectorOne,
 {
     this.select_one(this.rank_one(index))
 }
 
 pub fn naive_succ_zero<T>(this: &T, index: Index) -> Option<Index>
-    where T: BitVectorZero
+where
+    T: BitVectorZero,
 {
     let rank = this.rank_zero(index);
     if Some(index) == this.select_zero(rank) {
@@ -101,7 +104,8 @@ pub fn naive_succ_zero<T>(this: &T, index: Index) -> Option<Index>
 }
 
 pub fn naive_succ_one<T>(this: &T, index: Index) -> Option<Index>
-    where T: BitVectorOne
+where
+    T: BitVectorOne,
 {
     let rank = this.rank_one(index);
     if Some(index) == this.select_one(rank) {
@@ -115,22 +119,29 @@ pub struct LinearFid<T> {
     iter: T,
 }
 impl<T> LinearFid<T>
-    where T: Iterator<Item = Bit> + Clone
+where
+    T: Iterator<Item = Bit> + Clone,
 {
     pub fn new(iter: T) -> Self {
         LinearFid { iter: iter }
     }
 }
 impl<T> RankBit for LinearFid<T>
-    where T: Iterator<Item = Bit> + Clone
+where
+    T: Iterator<Item = Bit> + Clone,
 {
     fn rank_one(&self, index: Index) -> Rank {
         assert_eq!(index + 1, (index + 1) as usize as Index);
-        self.iter.clone().take((index + 1) as usize).filter(|b| *b).count() as Rank
+        self.iter
+            .clone()
+            .take((index + 1) as usize)
+            .filter(|b| *b)
+            .count() as Rank
     }
 }
 impl<T> SelectZero for LinearFid<T>
-    where T: Iterator<Item = Bit> + Clone
+where
+    T: Iterator<Item = Bit> + Clone,
 {
     fn select_zero(&self, rank: Rank) -> Option<Index> {
         if rank == 0 {
@@ -147,7 +158,8 @@ impl<T> SelectZero for LinearFid<T>
     }
 }
 impl<T> SelectOne for LinearFid<T>
-    where T: Iterator<Item = Bit> + Clone
+where
+    T: Iterator<Item = Bit> + Clone,
 {
     fn select_one(&self, rank: Rank) -> Option<Index> {
         if rank == 0 {
@@ -164,7 +176,8 @@ impl<T> SelectOne for LinearFid<T>
     }
 }
 impl<T> PredZero for LinearFid<T>
-    where T: Iterator<Item = Bit> + Clone
+where
+    T: Iterator<Item = Bit> + Clone,
 {
     fn pred_zero(&self, index: Index) -> Option<Index> {
         assert_eq!(index + 1, (index + 1) as usize as Index);
@@ -178,7 +191,8 @@ impl<T> PredZero for LinearFid<T>
     }
 }
 impl<T> PredOne for LinearFid<T>
-    where T: Iterator<Item = Bit> + Clone
+where
+    T: Iterator<Item = Bit> + Clone,
 {
     fn pred_one(&self, index: Index) -> Option<Index> {
         assert_eq!(index + 1, (index + 1) as usize as Index);
@@ -192,7 +206,8 @@ impl<T> PredOne for LinearFid<T>
     }
 }
 impl<T> SuccZero for LinearFid<T>
-    where T: Iterator<Item = Bit> + Clone
+where
+    T: Iterator<Item = Bit> + Clone,
 {
     fn succ_zero(&self, index: Index) -> Option<Index> {
         assert_eq!(index, index as usize as Index);
@@ -205,7 +220,8 @@ impl<T> SuccZero for LinearFid<T>
     }
 }
 impl<T> SuccOne for LinearFid<T>
-    where T: Iterator<Item = Bit> + Clone
+where
+    T: Iterator<Item = Bit> + Clone,
 {
     fn succ_one(&self, index: Index) -> Option<Index> {
         assert_eq!(index, index as usize as Index);

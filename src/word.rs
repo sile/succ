@@ -1,14 +1,14 @@
 use std::mem;
 
-use tree::Node;
-use tree::Edge;
-use tree::Labels;
+use bitwise::ops::ExternalByteSize;
+use bitwise::BitString;
+use bitwise::Index;
 use tree::traversal;
 use tree::traversal::DepthFirstIter;
 use tree::traversal::DepthFirstTraverse;
-use bitwise::Index;
-use bitwise::BitString;
-use bitwise::ops::ExternalByteSize;
+use tree::Edge;
+use tree::Labels;
+use tree::Node;
 
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct Letter<T> {
@@ -38,15 +38,18 @@ impl<T> Letters<T> {
     }
 }
 impl<T> ExternalByteSize for Letters<T>
-    where T: Sized
+where
+    T: Sized,
 {
     fn external_byte_size(&self) -> u64 {
-        self.end_of_words.external_byte_size() + mem::size_of_val(&self.values.len()) as u64 +
-        mem::size_of::<T>() as u64 * self.values.len() as u64
+        self.end_of_words.external_byte_size()
+            + mem::size_of_val(&self.values.len()) as u64
+            + mem::size_of::<T>() as u64 * self.values.len() as u64
     }
 }
 impl<T> Labels for Letters<T>
-    where T: Clone
+where
+    T: Clone,
 {
     type Label = Letter<T>;
     fn push(&mut self, label: Self::Label) {
@@ -68,14 +71,14 @@ impl<T> Labels for Letters<T>
     }
 }
 
-
 #[derive(Debug)]
 pub struct Words<T, N> {
     buf: Vec<T>,
     stack: Vec<Vec<Edge<Letter<T>, N>>>,
 }
 impl<T, N> Words<T, N>
-    where N: Node<Letter<T>>
+where
+    N: Node<Letter<T>>,
 {
     pub fn new(root: N) -> Self {
         let mut words = Words {
@@ -91,8 +94,9 @@ impl<T, N> Words<T, N>
     }
 }
 impl<T, N> Iterator for Words<T, N>
-    where N: Node<Letter<T>>,
-          T: Clone
+where
+    N: Node<Letter<T>>,
+    T: Clone,
 {
     type Item = Vec<T>;
     fn next(&mut self) -> Option<Self::Item> {
@@ -124,7 +128,8 @@ pub struct DepthFirstTraversal<T, W> {
     words: W,
 }
 impl<T, W> DepthFirstTraversal<T, W>
-    where W: Iterator<Item = Vec<T>>
+where
+    W: Iterator<Item = Vec<T>>,
 {
     pub fn new(words: W) -> Self {
         DepthFirstTraversal {
@@ -138,8 +143,9 @@ impl<T, W> DepthFirstTraversal<T, W>
     }
 }
 impl<T, W> DepthFirstTraverse for DepthFirstTraversal<T, W>
-    where W: Iterator<Item = Vec<T>>,
-          T: Clone + Eq
+where
+    W: Iterator<Item = Vec<T>>,
+    T: Clone + Eq,
 {
     type Label = Letter<T>;
     fn next(&mut self) -> Option<traversal::VisitNode<Self::Label>> {
@@ -156,11 +162,13 @@ impl<T, W> DepthFirstTraverse for DepthFirstTraversal<T, W>
                 match self.words.next() {
                     Some(v) => {
                         self.buf = v;
-                        if let Some(tail) = self.path
+                        if let Some(tail) = self
+                            .path
                             .iter()
                             .skip(1)
                             .zip(self.buf.iter())
-                            .position(|(&(ref l, _), ref b)| l.as_ref().unwrap().value != **b) {
+                            .position(|(&(ref l, _), ref b)| l.as_ref().unwrap().value != **b)
+                        {
                             self.path.truncate(tail + 1);
                             self.path[tail].1 += 1;
                         }

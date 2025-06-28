@@ -1,18 +1,18 @@
-use std::rc::Rc;
 use std::marker::PhantomData;
+use std::rc::Rc;
 
+use self::parentheses::Parens;
+use super::Edge;
+use super::LabelVec;
+use super::Labels;
+use super::NodeId;
+use bitwise::ops::ExternalByteSize;
+use bitwise::ops::NndOne;
 use bitwise::BitString;
 use bitwise::Index;
 use bitwise::SparseOneNnd;
-use bitwise::ops::NndOne;
-use bitwise::ops::ExternalByteSize;
 use tree::traversal::DepthFirstIter;
 use tree::traversal::DepthFirstTraverse;
-use super::Edge;
-use super::NodeId;
-use super::Labels;
-use super::LabelVec;
-use self::parentheses::Parens;
 
 mod parentheses;
 
@@ -21,35 +21,41 @@ pub struct BalancedParensTree<L, N = SparseOneNnd> {
     parens: Parens<N>,
 }
 impl<L> BalancedParensTree<LabelVec<L>, SparseOneNnd>
-    where L: Clone
+where
+    L: Clone,
 {
     pub fn new<T>(tree: T) -> Self
-        where T: DepthFirstTraverse<Label = L>
+    where
+        T: DepthFirstTraverse<Label = L>,
     {
         Self::new_builder(tree, LabelVec::new()).build_all()
     }
 }
 impl<L, N> BalancedParensTree<L, N>
-    where L: Labels,
-          N: NndOne + From<BitString>
+where
+    L: Labels,
+    N: NndOne + From<BitString>,
 {
     pub fn new_builder<T>(tree: T, labels: L) -> Builder<T, L, N>
-        where T: DepthFirstTraverse<Label = L::Label>
+    where
+        T: DepthFirstTraverse<Label = L::Label>,
     {
         Builder::new(tree, labels)
     }
 }
 impl<L, N> BalancedParensTree<L, N>
-    where L: ExternalByteSize,
-          N: ExternalByteSize
+where
+    L: ExternalByteSize,
+    N: ExternalByteSize,
 {
     pub fn external_byte_size(&self) -> u64 {
         self.labels.external_byte_size() + self.parens.external_byte_size()
     }
 }
 impl<L, N> BalancedParensTree<L, N>
-    where L: Labels,
-          N: NndOne
+where
+    L: Labels,
+    N: NndOne,
 {
     pub fn root(&self) -> Node<L, N, &Self> {
         Node::new(0, 0, self)
@@ -60,7 +66,8 @@ impl<L, N> BalancedParensTree<L, N>
 }
 
 impl<L, N> BalancedParensTree<L, N>
-    where L: Labels
+where
+    L: Labels,
 {
     pub fn len(&self) -> usize {
         self.labels.len()
@@ -80,9 +87,10 @@ pub struct Builder<T, L, N = SparseOneNnd> {
     _nnd: PhantomData<N>,
 }
 impl<T, L, N> Builder<T, L, N>
-    where T: DepthFirstTraverse,
-          L: Labels<Label = T::Label>,
-          N: NndOne + From<BitString>
+where
+    T: DepthFirstTraverse,
+    L: Labels<Label = T::Label>,
+    N: NndOne + From<BitString>,
 {
     pub fn new(tree: T, labels: L) -> Self {
         // TODO: Support `with_capacity`
@@ -137,9 +145,10 @@ pub struct Node<L, N, T> {
     _l: PhantomData<L>,
 }
 impl<L, N, T> Node<L, N, T>
-    where L: Labels,
-          N: NndOne,
-          T: ::std::ops::Deref<Target = BalancedParensTree<L, N>> + Clone
+where
+    L: Labels,
+    N: NndOne,
+    T: ::std::ops::Deref<Target = BalancedParensTree<L, N>> + Clone,
 {
     fn new(inner_id: NodeId, id: NodeId, tree: T) -> Self {
         Node {
@@ -152,7 +161,8 @@ impl<L, N, T> Node<L, N, T>
     }
 }
 impl<L, N, T> Node<L, N, T>
-    where T: Clone
+where
+    T: Clone,
 {
     pub fn tree(&self) -> T {
         self.tree.clone()
@@ -160,9 +170,10 @@ impl<L, N, T> Node<L, N, T>
 }
 
 impl<L, N, T> super::Node<L::Label> for Node<L, N, T>
-    where L: Labels,
-          N: NndOne,
-          T: ::std::ops::Deref<Target = BalancedParensTree<L, N>> + Clone
+where
+    L: Labels,
+    N: NndOne,
+    T: ::std::ops::Deref<Target = BalancedParensTree<L, N>> + Clone,
 {
     fn id(&self) -> NodeId {
         self.id
@@ -171,8 +182,10 @@ impl<L, N, T> super::Node<L::Label> for Node<L, N, T>
         let next = self.inner_id + 1;
         if self.tree.parens.get(next as Index).unwrap() {
             let id = self.id;
-            let child = Edge::new(self.tree.labels.get(id as usize).unwrap(),
-                                  Self::new(next, id + 1, self.tree.clone()));
+            let child = Edge::new(
+                self.tree.labels.get(id as usize).unwrap(),
+                Self::new(next, id + 1, self.tree.clone()),
+            );
             Some(child)
         } else {
             None
@@ -183,8 +196,10 @@ impl<L, N, T> super::Node<L::Label> for Node<L, N, T>
         let next = close + 1;
         if self.tree.parens.get(next).unwrap_or(false) {
             let id = self.id + (close - self.inner_id as Index) as NodeId / 2;
-            Some(Edge::new(self.tree.labels.get(id as usize).unwrap(),
-                           Self::new(next as NodeId, id + 1, self.tree.clone())))
+            Some(Edge::new(
+                self.tree.labels.get(id as usize).unwrap(),
+                Self::new(next as NodeId, id + 1, self.tree.clone()),
+            ))
         } else {
             None
         }
@@ -193,20 +208,22 @@ impl<L, N, T> super::Node<L::Label> for Node<L, N, T>
 
 #[cfg(test)]
 mod test {
-    use std::io;
-    use tree::Node;
-    use tree::traversal::ByteLines;
-    use word::{Letter, Words};
     use super::BalancedParensTree;
+    use std::io;
+    use tree::traversal::ByteLines;
+    use tree::Node;
+    use word::{Letter, Words};
 
     #[test]
     fn it_works() {
         let lines = ByteLines::new(io::Cursor::new(b"aaa\nabc\nd"));
         let tree = BalancedParensTree::new(lines.into_depth_first_traversal());
-        assert_eq!(Words::new(tree.root())
-                       .map(|b| String::from_utf8(b).unwrap())
-                       .collect::<Vec<_>>(),
-                   ["aaa", "abc", "d"]);
+        assert_eq!(
+            Words::new(tree.root())
+                .map(|b| String::from_utf8(b).unwrap())
+                .collect::<Vec<_>>(),
+            ["aaa", "abc", "d"]
+        );
     }
 
     #[test]
@@ -214,10 +231,12 @@ mod test {
         let input = "aaa111222\nabc3344\nd".to_string();
         let lines = ByteLines::new(io::Cursor::new(input.as_bytes()));
         let tree = BalancedParensTree::new(lines.into_depth_first_traversal());
-        assert_eq!(Words::new(tree.root())
-                       .map(|b| String::from_utf8(b).unwrap())
-                       .collect::<Vec<_>>(),
-                   ["aaa111222", "abc3344", "d"]);
+        assert_eq!(
+            Words::new(tree.root())
+                .map(|b| String::from_utf8(b).unwrap())
+                .collect::<Vec<_>>(),
+            ["aaa111222", "abc3344", "d"]
+        );
     }
 
     #[test]
@@ -232,16 +251,32 @@ mod test {
         fn label_eq(a: &&u8, b: &Letter<u8>) -> bool {
             **a == b.value
         }
-        assert!(tree.root().find_path("Ali".as_bytes().iter(), label_eq).is_some());
-        assert!(tree.root().find_path("colitis".as_bytes().iter(), label_eq).is_some());
-        assert!(tree.root().find_path("Abner".as_bytes().iter(), label_eq).is_some());
-        assert!(tree.root().find_path("Abbas".as_bytes().iter(), label_eq).is_some());
-        assert!(tree.root().find_path("Aaliyah".as_bytes().iter(), label_eq).is_some());
+        assert!(tree
+            .root()
+            .find_path("Ali".as_bytes().iter(), label_eq)
+            .is_some());
+        assert!(tree
+            .root()
+            .find_path("colitis".as_bytes().iter(), label_eq)
+            .is_some());
+        assert!(tree
+            .root()
+            .find_path("Abner".as_bytes().iter(), label_eq)
+            .is_some());
+        assert!(tree
+            .root()
+            .find_path("Abbas".as_bytes().iter(), label_eq)
+            .is_some());
+        assert!(tree
+            .root()
+            .find_path("Aaliyah".as_bytes().iter(), label_eq)
+            .is_some());
 
         for (i, (w1, w2)) in BufReader::new(io::Cursor::new(input.as_bytes()))
             .lines()
             .zip(Words::new(tree.to_owned_root()).map(|b| String::from_utf8(b).unwrap()))
-            .enumerate() {
+            .enumerate()
+        {
             let w1 = w1.unwrap();
             assert_eq!(w1, w2, "[{}] {} == {}", i, w1, w2);
         }

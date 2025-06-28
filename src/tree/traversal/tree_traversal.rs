@@ -1,8 +1,8 @@
-use tree::Node;
-use tree::Edge;
-use super::VisitNode;
-use super::DepthFirstTraverse;
 use super::DepthFirstIter;
+use super::DepthFirstTraverse;
+use super::VisitNode;
+use tree::Edge;
+use tree::Node;
 
 type Level = usize;
 type NthChild = usize;
@@ -11,17 +11,21 @@ pub struct TreeTraversal<L, N> {
     stack: Vec<(Edge<L, N>, Level, NthChild)>,
 }
 impl<L, N> TreeTraversal<L, N>
-    where N: Node<L>
+where
+    N: Node<L>,
 {
     pub fn new(root: N) -> Self {
-        TreeTraversal { stack: root.first_child().into_iter().map(|e| (e, 0, 0)).collect() }
+        TreeTraversal {
+            stack: root.first_child().into_iter().map(|e| (e, 0, 0)).collect(),
+        }
     }
     pub fn into_depth_first_iter(self) -> DepthFirstIter<Self> {
         DepthFirstIter::new(self)
     }
 }
 impl<L, N> DepthFirstTraverse for TreeTraversal<L, N>
-    where N: Node<L>
+where
+    N: Node<L>,
 {
     type Label = L;
     fn next(&mut self) -> Option<VisitNode<Self::Label>> {
@@ -44,11 +48,13 @@ pub struct PatriciaTreeTraversal<L, N> {
     stack: Vec<(Edge<Vec<L>, N>, Level, NthChild)>,
 }
 impl<L, N> PatriciaTreeTraversal<L, N>
-    where N: Node<L>
+where
+    N: Node<L>,
 {
     pub fn new(root: N) -> Self {
         PatriciaTreeTraversal {
-            stack: root.first_child()
+            stack: root
+                .first_child()
                 .into_iter()
                 .map(|e| (Edge::new(vec![e.label], e.node), 0, 0))
                 .collect(),
@@ -59,7 +65,8 @@ impl<L, N> PatriciaTreeTraversal<L, N>
     }
 }
 impl<L, N> DepthFirstTraverse for PatriciaTreeTraversal<L, N>
-    where N: Node<L>
+where
+    N: Node<L>,
 {
     type Label = Vec<L>;
     fn next(&mut self) -> Option<VisitNode<Self::Label>> {
@@ -67,7 +74,8 @@ impl<L, N> DepthFirstTraverse for PatriciaTreeTraversal<L, N>
             let mut has_sibling = false;
             if let Some(s) = edge.node.next_sibling() {
                 has_sibling = true;
-                self.stack.push((Edge::new(vec![s.label], s.node), level, nth_child + 1));
+                self.stack
+                    .push((Edge::new(vec![s.label], s.node), level, nth_child + 1));
             }
             if let Some(c) = edge.node.first_child() {
                 if has_sibling {

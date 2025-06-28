@@ -1,10 +1,10 @@
-use std::mem;
 use std::marker::PhantomData;
+use std::mem;
 
 use bitwise::ops::ExternalByteSize;
 
-pub mod traversal;
 pub mod balanced_parens;
+pub mod traversal;
 
 pub type NodeId = u32;
 
@@ -16,8 +16,9 @@ pub trait Node<L>: Sized {
         Children::new(self)
     }
     fn find_path<P, M, F>(&self, mut path: P, f: F) -> Option<Self>
-        where P: Iterator<Item = M>,
-              F: Fn(&M, &L) -> bool
+    where
+        P: Iterator<Item = M>,
+        F: Fn(&M, &L) -> bool,
     {
         let mut children = self.children();
         let mut last_child = None;
@@ -67,14 +68,16 @@ impl<T> LabelVec<T> {
     }
 }
 impl<T> ExternalByteSize for LabelVec<T>
-    where T: Sized
+where
+    T: Sized,
 {
     fn external_byte_size(&self) -> u64 {
         mem::size_of_val(&self.0.len()) as u64 + mem::size_of::<T>() as u64 * self.0.len() as u64
     }
 }
 impl<T> Labels for LabelVec<T>
-    where T: Clone
+where
+    T: Clone,
 {
     type Label = T;
     fn push(&mut self, label: Self::Label) {
@@ -91,15 +94,16 @@ impl<T> Labels for LabelVec<T>
     }
 }
 
-
 pub struct Children<N, L>
-    where N: Node<L>
+where
+    N: Node<L>,
 {
     child: Option<Edge<L, N>>,
     _l: PhantomData<L>,
 }
 impl<N, L> Children<N, L>
-    where N: Node<L>
+where
+    N: Node<L>,
 {
     fn new(node: &N) -> Self {
         Children {
@@ -109,7 +113,8 @@ impl<N, L> Children<N, L>
     }
 }
 impl<N, L> Iterator for Children<N, L>
-    where N: Node<L>
+where
+    N: Node<L>,
 {
     type Item = Edge<L, N>;
     fn next(&mut self) -> Option<Self::Item> {

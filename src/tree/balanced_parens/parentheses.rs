@@ -1,11 +1,11 @@
 use bitwise;
-use bitwise::Bit;
-use bitwise::Index;
 use bitwise::fixnum::Fixnum;
 use bitwise::fixnum::FixnumLike;
-use bitwise::ops::NndOne;
-use bitwise::ops::GetClose;
 use bitwise::ops::ExternalByteSize;
+use bitwise::ops::GetClose;
+use bitwise::ops::NndOne;
+use bitwise::Bit;
+use bitwise::Index;
 
 pub type Block = u64;
 
@@ -19,12 +19,14 @@ const BLOCK_SIZE: Index = 64; // TODO
 impl Fixnum<Block> {
     fn relative_level(&self, parent: Index, child: Index) -> Index {
         assert!(parent <= child, "{} <= {}", parent, child);
-        assert!(self.left_excess(child) >= self.left_excess(parent),
-                "{}@{} <= {}@{}",
-                child,
-                self.left_excess(child),
-                parent,
-                self.left_excess(parent));
+        assert!(
+            self.left_excess(child) >= self.left_excess(parent),
+            "{}@{} <= {}@{}",
+            child,
+            self.left_excess(child),
+            parent,
+            self.left_excess(parent)
+        );
         self.left_excess(child) - self.left_excess(parent)
     }
     fn far_child(&self, index: Index, level: Index) -> Index {
@@ -74,7 +76,8 @@ pub struct Parens<N> {
     pioneers: Option<Box<PioneerFamily<N>>>,
 }
 impl<N> Parens<N>
-    where N: NndOne + From<BitString>
+where
+    N: NndOne + From<BitString>,
 {
     pub fn new(bits: BitString) -> Self {
         let pioneers = if bits.len() > Block::bitwidth() as Index {
@@ -89,15 +92,17 @@ impl<N> Parens<N>
     }
 }
 impl<N> ExternalByteSize for Parens<N>
-    where N: ExternalByteSize
+where
+    N: ExternalByteSize,
 {
     fn external_byte_size(&self) -> u64 {
-        self.bits.external_byte_size() +
-        self.pioneers.as_ref().map_or(0, |p| p.external_byte_size())
+        self.bits.external_byte_size()
+            + self.pioneers.as_ref().map_or(0, |p| p.external_byte_size())
     }
 }
 impl<N> Parens<N>
-    where N: NndOne
+where
+    N: NndOne,
 {
     pub fn get_close(&self, index: Index) -> Option<Index> {
         debug_assert_eq!(self.bits.get(index).unwrap_or(OPEN), OPEN);
@@ -111,30 +116,34 @@ impl<N> Parens<N>
                     let open_pioneer = pioneers.pred(index);
                     let open_block = open_pioneer / BLOCK_SIZE;
                     let level = if open_block == base {
-                         b.relative_level(open_pioneer % BLOCK_SIZE, offset)
-                     } else {
-                         let next_fix = &self.bits.as_fixnums()[open_block as usize];
-                         next_fix.relative_level(open_pioneer % BLOCK_SIZE, 0) +    // inner lvl
-                         b.relative_level(0, offset)                                // this block
-                     };
+                        b.relative_level(open_pioneer % BLOCK_SIZE, offset)
+                    } else {
+                        let next_fix = &self.bits.as_fixnums()[open_block as usize];
+                        next_fix.relative_level(open_pioneer % BLOCK_SIZE, 0) +    // inner lvl
+                         b.relative_level(0, offset) // this block
+                    };
 
                     let close_pioneer = pioneers.get_close(open_pioneer);
                     let close_block_idx = (close_pioneer / BLOCK_SIZE) as usize;
                     let fixnums = self.bits.as_fixnums();
                     let close_fix = if close_block_idx < fixnums.len() {
-                         &fixnums[close_block_idx]
+                        &fixnums[close_block_idx]
                     } else {
-                         /*  Pair crosses past the end (degenerate last word with
-                          *  only opens) – fall back to a linear scan. */
+                        /*  Pair crosses past the end (degenerate last word with
+                         *  only opens) – fall back to a linear scan. */
                         let mut lvl = 0;
-                        for i in index + 1 .. self.bits.len() {
-                            if self.bits.get(i) == Some(OPEN) { lvl += 1 } else if lvl == 0 { return i }
-                            else { lvl -= 1 }
+                        for i in index + 1..self.bits.len() {
+                            if self.bits.get(i) == Some(OPEN) {
+                                lvl += 1
+                            } else if lvl == 0 {
+                                return i;
+                            } else {
+                                lvl -= 1
+                            }
                         }
                         unreachable!("balanced parentheses guarantee a close exists");
                     };
-                    let local_close_index =
-                         close_fix.far_child(close_pioneer % BLOCK_SIZE, level);
+                    let local_close_index = close_fix.far_child(close_pioneer % BLOCK_SIZE, level);
 
                     let close_index = (close_pioneer / BLOCK_SIZE * BLOCK_SIZE) + local_close_index;
                     close_index
@@ -153,7 +162,8 @@ struct PioneerFamily<N> {
     parens: Parens<N>,
 }
 impl<N> PioneerFamily<N>
-    where N: NndOne + From<BitString>
+where
+    N: NndOne + From<BitString>,
 {
     fn new(bits: &BitString) -> Self {
         let (flags, parens) = extract_pioneers(bits);
@@ -164,14 +174,16 @@ impl<N> PioneerFamily<N>
     }
 }
 impl<N> ExternalByteSize for PioneerFamily<N>
-    where N: ExternalByteSize
+where
+    N: ExternalByteSize,
 {
     fn external_byte_size(&self) -> u64 {
         self.nnd.external_byte_size() + self.parens.external_byte_size()
     }
 }
 impl<N> PioneerFamily<N>
-    where N: NndOne
+where
+    N: NndOne,
 {
     fn pred(&self, index: Index) -> Index {
         self.nnd.pred_one(index).unwrap()
@@ -223,7 +235,8 @@ fn extract_pioneers(bits: &BitString) -> (BitString, BitString) {
     flags.set(open, true);
     flags.set(close, true);
 
-    let parens = bits.iter()
+    let parens = bits
+        .iter()
         .zip(flags.iter())
         .filter(|&(_, p)| p)
         .map(|(bit, _)| bit)

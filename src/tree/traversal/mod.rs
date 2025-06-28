@@ -1,6 +1,6 @@
 pub use self::byte_lines::ByteLines;
-pub use self::tree_traversal::TreeTraversal;
 pub use self::tree_traversal::PatriciaTreeTraversal;
+pub use self::tree_traversal::TreeTraversal;
 
 mod byte_lines;
 mod tree_traversal;
@@ -36,7 +36,8 @@ impl<T> DepthFirstIter<T> {
     }
 }
 impl<T> Iterator for DepthFirstIter<T>
-    where T: DepthFirstTraverse
+where
+    T: DepthFirstTraverse,
 {
     type Item = VisitNode<T::Label>;
     fn next(&mut self) -> Option<Self::Item> {

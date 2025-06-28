@@ -7,7 +7,8 @@ pub struct ByteLines<R> {
     on_error: Box<dyn Fn(io::Error)>,
 }
 impl<R> ByteLines<R>
-    where R: io::BufRead
+where
+    R: io::BufRead,
 {
     pub fn new(reader: R) -> Self {
         ByteLines {
@@ -16,7 +17,8 @@ impl<R> ByteLines<R>
         }
     }
     pub fn set_on_error<F>(&mut self, on_error: F)
-        where F: Fn(io::Error) + 'static
+    where
+        F: Fn(io::Error) + 'static,
     {
         self.on_error = Box::new(on_error);
     }
@@ -25,7 +27,8 @@ impl<R> ByteLines<R>
     }
 }
 impl<R> Iterator for ByteLines<R>
-    where R: io::BufRead
+where
+    R: io::BufRead,
 {
     type Item = Vec<u8>;
     fn next(&mut self) -> Option<Self::Item> {
@@ -42,21 +45,26 @@ impl<R> Iterator for ByteLines<R>
 
 #[cfg(test)]
 mod test {
-    use std::io;
-    use word::Letter;
     use super::super::VisitNode;
     use super::*;
+    use std::io;
+    use word::Letter;
 
     #[test]
     fn it_works() {
-        let lines =
-            ByteLines::new(io::Cursor::new(b"aaa\nabc\nd")).into_depth_first_traversal().iter();
-        assert_eq!(lines.collect::<Vec<_>>(),
-                   vec![VisitNode::new(Letter::new(false, b'a'), 0, 0),
-                        VisitNode::new(Letter::new(false, b'a'), 1, 0),
-                        VisitNode::new(Letter::new(true, b'a'), 2, 0),
-                        VisitNode::new(Letter::new(false, b'b'), 1, 1),
-                        VisitNode::new(Letter::new(true, b'c'), 2, 0),
-                        VisitNode::new(Letter::new(true, b'd'), 0, 1)]);
+        let lines = ByteLines::new(io::Cursor::new(b"aaa\nabc\nd"))
+            .into_depth_first_traversal()
+            .iter();
+        assert_eq!(
+            lines.collect::<Vec<_>>(),
+            vec![
+                VisitNode::new(Letter::new(false, b'a'), 0, 0),
+                VisitNode::new(Letter::new(false, b'a'), 1, 0),
+                VisitNode::new(Letter::new(true, b'a'), 2, 0),
+                VisitNode::new(Letter::new(false, b'b'), 1, 1),
+                VisitNode::new(Letter::new(true, b'c'), 2, 0),
+                VisitNode::new(Letter::new(true, b'd'), 0, 1)
+            ]
+        );
     }
 }
