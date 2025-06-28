@@ -213,8 +213,7 @@ where
 mod test {
     use super::BalancedParensTree;
     use crate::tree::traversal::ByteLines;
-    use crate::tree::Node;
-    use crate::word::{Letter, Words};
+    use crate::word::Words;
     use std::io;
 
     #[test]
@@ -240,48 +239,5 @@ mod test {
                 .collect::<Vec<_>>(),
             ["aaa111222", "abc3344", "d"]
         );
-    }
-
-    #[test]
-    fn it_works3() {
-        use std::io::BufRead;
-        use std::io::BufReader;
-
-        let input = include_str!("/usr/share/dict/american-english");
-        let lines = ByteLines::new(io::Cursor::new(input.as_bytes()));
-        let tree = BalancedParensTree::new(lines.into_depth_first_traversal());
-
-        fn label_eq(a: &&u8, b: &Letter<u8>) -> bool {
-            **a == b.value
-        }
-        assert!(tree
-            .root()
-            .find_path("Ali".as_bytes().iter(), label_eq)
-            .is_some());
-        assert!(tree
-            .root()
-            .find_path("colitis".as_bytes().iter(), label_eq)
-            .is_some());
-        assert!(tree
-            .root()
-            .find_path("Abner".as_bytes().iter(), label_eq)
-            .is_some());
-        assert!(tree
-            .root()
-            .find_path("Abbas".as_bytes().iter(), label_eq)
-            .is_some());
-        assert!(tree
-            .root()
-            .find_path("Aaliyah".as_bytes().iter(), label_eq)
-            .is_some());
-
-        for (i, (w1, w2)) in BufReader::new(io::Cursor::new(input.as_bytes()))
-            .lines()
-            .zip(Words::new(tree.to_owned_root()).map(|b| String::from_utf8(b).unwrap()))
-            .enumerate()
-        {
-            let w1 = w1.unwrap();
-            assert_eq!(w1, w2, "[{}] {} == {}", i, w1, w2);
-        }
     }
 }

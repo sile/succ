@@ -18,7 +18,7 @@ const BLOCK_SIZE: Index = 64; // TODO
 
 impl Fixnum<Block> {
     fn relative_level(&self, parent: Index, child: Index) -> Index {
-        assert!(parent <= child, "{} <= {}", parent, child);
+        assert!(parent <= child, "{parent} <= {child}");
         assert!(
             self.left_excess(child) >= self.left_excess(parent),
             "{}@{} <= {}@{}",
@@ -223,7 +223,7 @@ fn extract_pioneers(bits: &BitString) -> (BitString, BitString) {
             last_far = Some((open, close));
         }
     }
-    assert!(stack.is_empty(), "STACK: {:?}", stack);
+    assert!(stack.is_empty(), "STACK: {stack:?}");
     assert_eq!(last_far, Some((0, bits.len() - 1)));
     let (open, close) = last_far.unwrap();
     flags.set(open, true);
