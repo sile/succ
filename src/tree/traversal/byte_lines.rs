@@ -1,6 +1,6 @@
 use std::io;
 
-use word::DepthFirstTraversal;
+use crate::word::DepthFirstTraversal;
 
 pub struct ByteLines<R> {
     reader: io::Split<R>,
@@ -47,8 +47,8 @@ where
 mod test {
     use super::super::VisitNode;
     use super::*;
+    use crate::word::Letter;
     use std::io;
-    use word::Letter;
 
     #[test]
     fn it_works() {

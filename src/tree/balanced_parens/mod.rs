@@ -6,13 +6,13 @@ use super::Edge;
 use super::LabelVec;
 use super::Labels;
 use super::NodeId;
-use bitwise::ops::ExternalByteSize;
-use bitwise::ops::NndOne;
-use bitwise::BitString;
-use bitwise::Index;
-use bitwise::SparseOneNnd;
-use tree::traversal::DepthFirstIter;
-use tree::traversal::DepthFirstTraverse;
+use crate::bitwise::ops::ExternalByteSize;
+use crate::bitwise::ops::NndOne;
+use crate::bitwise::BitString;
+use crate::bitwise::Index;
+use crate::bitwise::SparseOneNnd;
+use crate::tree::traversal::DepthFirstIter;
+use crate::tree::traversal::DepthFirstTraverse;
 
 mod parentheses;
 
@@ -209,10 +209,10 @@ where
 #[cfg(test)]
 mod test {
     use super::BalancedParensTree;
+    use crate::tree::traversal::ByteLines;
+    use crate::tree::Node;
+    use crate::word::{Letter, Words};
     use std::io;
-    use tree::traversal::ByteLines;
-    use tree::Node;
-    use word::{Letter, Words};
 
     #[test]
     fn it_works() {

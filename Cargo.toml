@@ -2,6 +2,7 @@
 name = "succ"
 version = "0.0.1"
 authors = ["Takeru Ohta <phjgt308@gmail.com>"]
+edition = "2021"
 
 [dependencies]
 

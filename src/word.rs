@@ -1,14 +1,14 @@
 use std::mem;
 
-use bitwise::ops::ExternalByteSize;
-use bitwise::BitString;
-use bitwise::Index;
-use tree::traversal;
-use tree::traversal::DepthFirstIter;
-use tree::traversal::DepthFirstTraverse;
-use tree::Edge;
-use tree::Labels;
-use tree::Node;
+use crate::bitwise::ops::ExternalByteSize;
+use crate::bitwise::BitString;
+use crate::bitwise::Index;
+use crate::tree::traversal;
+use crate::tree::traversal::DepthFirstIter;
+use crate::tree::traversal::DepthFirstTraverse;
+use crate::tree::Edge;
+use crate::tree::Labels;
+use crate::tree::Node;
 
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct Letter<T> {
