@@ -1,7 +1,10 @@
 succparen
 =========
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![succparen](https://img.shields.io/crates/v/succparen.svg)](https://crates.io/crates/succparen)
+[![Documentation](https://docs.rs/succparen/badge.svg)](https://docs.rs/succparen)
+[![Actions Status](https://github.com/sile/succparen/workflows/CI/badge.svg)](https://github.com/sile/succparen/actions)
+![License](https://img.shields.io/crates/l/succparen)
 
 Succinct Data Structures
 

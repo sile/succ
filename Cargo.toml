@@ -3,6 +3,11 @@ name = "succparen"
 version = "0.0.1"
 authors = ["Takeru Ohta <phjgt308@gmail.com>"]
 edition = "2021"
+license = "MIT"
+description = "Succinct data structures library for balanced parentheses representation"
+homepage = "https://github.com/sile/succparen"
+repository = "https://github.com/sile/succparen"
+readme = "README.md"
 
 [dev-dependencies]
 noargs = "0.4.1"
