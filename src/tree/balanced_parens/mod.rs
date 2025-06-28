@@ -270,8 +270,8 @@ mod test {
             .root()
             .find_path("Abbas".as_bytes().iter(), label_eq)
             .is_some());
-        assert!(treetree
-            t()
+        assert!(tree
+            .root()
             .find_path("Aaliyah".as_bytes().iter(), label_eq)
             .is_some());
 
