@@ -15,7 +15,7 @@ const LARGE_SIZE: usize = MIDDLE_SIZE * MIDDLE_COUNT;
 pub struct SparseOneNnd {
     smalles: Vec<u8>,
     middles: Vec<Base<u16>>,
-    larges: Vec<Base<u32>>,
+    larges: Vec<Base<u64>>,
 }
 impl SparseOneNnd {
     fn from_one_indices<I>(iter: I) -> Self
@@ -41,7 +41,7 @@ impl SparseOneNnd {
 
                 if next_small_i % LARGE_SIZE == 0 {
                     large_prev = Base::new(small_base, rank);
-                    larges.push(Base::new(large_prev.small_index as u32, large_prev.rank as u32));
+                    larges.push(Base::new(large_prev.small_index as u64, large_prev.rank as u64));
                 }
                 if next_small_i % MIDDLE_SIZE == 0 {
                     middles.push(Base::new((small_base - large_prev.small_index) as u16,
@@ -81,12 +81,12 @@ impl From<BitString> for SparseOneNnd {
 }
 impl RankBit for SparseOneNnd {
     fn rank_one(&self, index: Index) -> Rank {
-        let large_index = (index / LARGE_SIZE as Index) as usize;
+        let large_index = ((index / LARGE_SIZE as Index) as usize)
+             .min(self.larges.len() - 1); 
         let large_base = &self.larges[large_index];
-        // let large_offset = large_index as Index * LARGE_SIZE as Index;
-
-        let middle_index = (index / MIDDLE_SIZE as Index) as usize;
-        let middle_base = &self.middles[middle_index];
+        let middle_index = ((index / MIDDLE_SIZE as Index) as usize)
+            .min(self.middles.len() - 1);
+        let middle_base  = &self.middles[middle_index];
         let middle_offset = middle_index as Index * MIDDLE_SIZE as Index;
 
         let mut small_index = large_base.small_index as usize + middle_base.small_index as usize;
@@ -117,16 +117,15 @@ impl SelectOne for SparseOneNnd {
         }
         let rank = rank - 1;
 
-        //
         let i = self.larges
-            .binary_search_by_key(&rank, |e| e.rank as Rank)
-            .unwrap_or_else(|i| i - 1);
+             .binary_search_by_key(&rank, |e| e.rank as Rank)
+             .unwrap_or_else(|i| i.saturating_sub(1));
         let large_base = &self.larges[i];
         let large_index = i as Index * LARGE_SIZE as Index;
         let middle_rank = rank - large_base.rank as Rank;
 
         let middle_start = i * MIDDLE_COUNT;
-        let middle_end = ::std::cmp::min(self.middles.len(), middle_start + MIDDLE_COUNT);
+        let middle_end   = (middle_start + MIDDLE_COUNT).min(self.middles.len());
         let middles = &self.middles[middle_start..middle_end];
         {
             let i = middles.binary_search_by_key(&middle_rank, |e| e.rank as Rank)
@@ -167,21 +166,20 @@ impl ops::ExternalByteSize for SparseOneNnd {
     fn external_byte_size(&self) -> u64 {
         self.smalles.len() as u64 +
         self.middles.len() as u64 * std::mem::size_of::<Base<u16>>() as u64 +
-        self.larges.len() as u64 * std::mem::size_of::<Base<u32>>() as u64
+        self.larges.len() as u64 * std::mem::size_of::<Base<u64>>() as u64
     }
 }
 
-#[derive(Debug, Clone)]
-struct Base<T> {
+#[derive(Debug, Clone, Copy)]        
+struct Base<T: Copy> {
     small_index: T,
-    rank: T,
+    rank:        T,
 }
-impl<T> Base<T> {
+
+impl<T: Copy> Base<T> {                
+    #[inline]
     fn new(small_index: T, rank: T) -> Self {
-        Base {
-            small_index: small_index,
-            rank: rank,
-        }
+        Base { small_index, rank }
     }
 }
 

@@ -4,7 +4,7 @@ use word::DepthFirstTraversal;
 
 pub struct ByteLines<R> {
     reader: io::Split<R>,
-    on_error: Box<Fn(io::Error)>,
+    on_error: Box<dyn Fn(io::Error)>,
 }
 impl<R> ByteLines<R>
     where R: io::BufRead

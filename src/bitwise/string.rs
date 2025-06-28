@@ -51,11 +51,11 @@ impl<N> BitString<N>
         self.fixnums[base as usize].set(offset, bit);
     }
     pub fn push(&mut self, bit: Bit) {
+        let (base, offset) = Self::base_and_offset(self.len);
+        while self.fixnums.len() <= base as usize {
+            self.fixnums.push(Fixnum::zero());
+        }
         if bit {
-            let (base, offset) = Self::base_and_offset(self.len);
-            while self.fixnums.len() <= base as usize {
-                self.fixnums.push(Fixnum::zero());
-            }
             self.fixnums[base as usize].set(offset, bit);
         }
         self.len += 1;
@@ -66,10 +66,10 @@ impl<N> BitString<N>
     pub fn shrink_to_fit(&mut self) {
         self.fixnums.shrink_to_fit();
     }
-    pub fn iter(&self) -> Iter<N> {
+    pub fn iter(&self) -> Iter<'_,N> {
         Iter::new(self)
     }
-    pub fn one_indices(&self) -> OneIndices<N> {
+    pub fn one_indices(&self) -> OneIndices<'_,N> {
         OneIndices::new(self)
     }
     pub fn as_fixnums(&self) -> &[Fixnum<N>] {
@@ -217,7 +217,7 @@ impl<N> fmt::Display for BitString<N>
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for b in self.iter() {
-            try!(write!(f, "{}", if b { 1 } else { 0 }))
+            write!(f, "{}", if b { 1 } else { 0 })?
         }
         Ok(())
     }

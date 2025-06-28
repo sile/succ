@@ -109,14 +109,32 @@ impl<N> Parens<N>
                 .unwrap_or_else(|| {
                     let pioneers = self.pioneers.as_ref().unwrap();
                     let open_pioneer = pioneers.pred(index);
-                    assert_eq!(base, open_pioneer / BLOCK_SIZE);
-                    let level = b.relative_level(open_pioneer % BLOCK_SIZE, offset);
+                    let open_block = open_pioneer / BLOCK_SIZE;
+                    let level = if open_block == base {
+                         b.relative_level(open_pioneer % BLOCK_SIZE, offset)
+                     } else {
+                         let next_fix = &self.bits.as_fixnums()[open_block as usize];
+                         next_fix.relative_level(open_pioneer % BLOCK_SIZE, 0) +    // inner lvl
+                         b.relative_level(0, offset)                                // this block
+                     };
 
                     let close_pioneer = pioneers.get_close(open_pioneer);
-                    let close_block =
-                        &self.bits.as_fixnums()[(close_pioneer / BLOCK_SIZE) as usize];
+                    let close_block_idx = (close_pioneer / BLOCK_SIZE) as usize;
+                    let fixnums = self.bits.as_fixnums();
+                    let close_fix = if close_block_idx < fixnums.len() {
+                         &fixnums[close_block_idx]
+                    } else {
+                         /*  Pair crosses past the end (degenerate last word with
+                          *  only opens) – fall back to a linear scan. */
+                        let mut lvl = 0;
+                        for i in index + 1 .. self.bits.len() {
+                            if self.bits.get(i) == Some(OPEN) { lvl += 1 } else if lvl == 0 { return i }
+                            else { lvl -= 1 }
+                        }
+                        unreachable!("balanced parentheses guarantee a close exists");
+                    };
                     let local_close_index =
-                        close_block.far_child(close_pioneer % BLOCK_SIZE, level);
+                         close_fix.far_child(close_pioneer % BLOCK_SIZE, level);
 
                     let close_index = (close_pioneer / BLOCK_SIZE * BLOCK_SIZE) + local_close_index;
                     close_index
