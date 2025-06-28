@@ -15,14 +15,14 @@ pub trait Node<L>: Sized {
     fn children(&self) -> Children<Self, L> {
         Children::new(self)
     }
-    fn find_path<P, M, F>(&self, mut path: P, f: F) -> Option<Self>
+    fn find_path<P, M, F>(&self, path: P, f: F) -> Option<Self>
     where
         P: Iterator<Item = M>,
         F: Fn(&M, &L) -> bool,
     {
         let mut children = self.children();
         let mut last_child = None;
-        while let Some(label) = path.next() {
+        for label in path {
             match children.find(|e| f(&label, &e.label)) {
                 None => return None,
                 Some(c) => {
@@ -45,10 +45,7 @@ pub struct Edge<L, N> {
 }
 impl<L, N> Edge<L, N> {
     pub fn new(label: L, node: N) -> Self {
-        Edge {
-            label: label,
-            node: node,
-        }
+        Edge { label, node }
     }
 }
 
@@ -57,6 +54,9 @@ pub trait Labels {
     fn push(&mut self, label: Self::Label);
     fn get(&self, index: usize) -> Option<Self::Label>;
     fn len(&self) -> usize;
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
     fn shrink_to_fit(&mut self) {}
 }
 
@@ -65,6 +65,11 @@ pub struct LabelVec<T>(Vec<T>);
 impl<T> LabelVec<T> {
     pub fn new() -> Self {
         LabelVec(Vec::new())
+    }
+}
+impl<T> Default for LabelVec<T> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 impl<T> ExternalByteSize for LabelVec<T>
@@ -118,9 +123,8 @@ where
 {
     type Item = Edge<L, N>;
     fn next(&mut self) -> Option<Self::Item> {
-        self.child.take().map(|e| {
+        self.child.take().inspect(|e| {
             self.child = e.node.next_sibling();
-            e
         })
     }
 }

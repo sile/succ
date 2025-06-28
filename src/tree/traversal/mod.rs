@@ -14,9 +14,9 @@ pub struct VisitNode<T> {
 impl<T> VisitNode<T> {
     pub fn new(label: T, level: usize, nth_child: usize) -> Self {
         VisitNode {
-            label: label,
-            level: level,
-            nth_child: nth_child,
+            label,
+            level,
+            nth_child,
         }
     }
 }

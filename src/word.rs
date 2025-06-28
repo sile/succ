@@ -17,10 +17,7 @@ pub struct Letter<T> {
 }
 impl<T> Letter<T> {
     pub fn new(end_of_word: bool, value: T) -> Self {
-        Letter {
-            end_of_word: end_of_word,
-            value: value,
-        }
+        Letter { end_of_word, value }
     }
 }
 
@@ -35,6 +32,11 @@ impl<T> Letters<T> {
             end_of_words: BitString::new(),
             values: Vec::new(),
         }
+    }
+}
+impl<T> Default for Letters<T> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 impl<T> ExternalByteSize for Letters<T>
@@ -53,7 +55,7 @@ where
 {
     type Label = Letter<T>;
     fn push(&mut self, label: Self::Label) {
-        self.end_of_words.push(From::from(label.end_of_word));
+        self.end_of_words.push(label.end_of_word);
         self.values.push(label.value);
     }
     fn get(&self, index: usize) -> Option<Self::Label> {
@@ -135,7 +137,7 @@ where
         DepthFirstTraversal {
             buf: Vec::new(),
             path: vec![(None, 0)],
-            words: words,
+            words,
         }
     }
     pub fn iter(self) -> DepthFirstIter<Self> {
@@ -167,7 +169,7 @@ where
                             .iter()
                             .skip(1)
                             .zip(self.buf.iter())
-                            .position(|(&(ref l, _), ref b)| l.as_ref().unwrap().value != **b)
+                            .position(|((l, _), b)| l.as_ref().unwrap().value != *b)
                         {
                             self.path.truncate(tail + 1);
                             self.path[tail].1 += 1;

@@ -123,7 +123,7 @@ where
     T: Iterator<Item = Bit> + Clone,
 {
     pub fn new(iter: T) -> Self {
-        LinearFid { iter: iter }
+        LinearFid { iter }
     }
 }
 impl<T> RankBit for LinearFid<T>

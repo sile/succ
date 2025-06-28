@@ -49,20 +49,23 @@ where
     pub fn set(&mut self, index: Index, bit: Bit) {
         assert!(index < self.len());
         let (base, offset) = Self::base_and_offset(index);
-        self.fixnums[base as usize].set(offset, bit);
+        self.fixnums[base].set(offset, bit);
     }
     pub fn push(&mut self, bit: Bit) {
         let (base, offset) = Self::base_and_offset(self.len);
-        while self.fixnums.len() <= base as usize {
+        while self.fixnums.len() <= base {
             self.fixnums.push(Fixnum::zero());
         }
         if bit {
-            self.fixnums[base as usize].set(offset, bit);
+            self.fixnums[base].set(offset, bit);
         }
         self.len += 1;
     }
     pub fn len(&self) -> Index {
         self.len
+    }
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
     }
     pub fn shrink_to_fit(&mut self) {
         self.fixnums.shrink_to_fit();
@@ -243,7 +246,7 @@ pub struct Iter<'a, N: 'a> {
 }
 impl<'a, N: 'a> Iter<'a, N> {
     pub fn new(bs: &'a BitString<N>) -> Self {
-        Iter { bs: bs, i: 0 }
+        Iter { bs, i: 0 }
     }
 }
 impl<'a, N: 'a> Iterator for Iter<'a, N>
@@ -263,7 +266,7 @@ pub struct OneIndices<'a, N: 'a> {
 }
 impl<'a, N: 'a> OneIndices<'a, N> {
     pub fn new(bs: &'a BitString<N>) -> Self {
-        OneIndices { bs: bs, i: 0 }
+        OneIndices { bs, i: 0 }
     }
 }
 impl<'a, N: 'a> Iterator for OneIndices<'a, N>
@@ -272,9 +275,8 @@ where
 {
     type Item = Index;
     fn next(&mut self) -> Option<Self::Item> {
-        self.bs.succ_one(self.i).map(|index| {
+        self.bs.succ_one(self.i).inspect(|index| {
             self.i = index + 1;
-            index
         })
     }
 }

@@ -56,14 +56,12 @@ impl Fixnum<Block> {
         j.unwrap()
     }
     fn left_excess(&self, index: Index) -> Index {
-        let mut level = 0;
+        let mut level: Index = 0;
         for i in 0..index {
             if self.get(i) == OPEN {
                 level += 1;
             } else {
-                if level != 0 {
-                    level -= 1;
-                }
+                level = level.saturating_sub(1);
             }
         }
         level
@@ -85,10 +83,7 @@ where
         } else {
             None
         };
-        Parens {
-            bits: bits,
-            pioneers: pioneers,
-        }
+        Parens { bits, pioneers }
     }
 }
 impl<N> ExternalByteSize for Parens<N>
@@ -145,8 +140,7 @@ where
                     };
                     let local_close_index = close_fix.far_child(close_pioneer % BLOCK_SIZE, level);
 
-                    let close_index = (close_pioneer / BLOCK_SIZE * BLOCK_SIZE) + local_close_index;
-                    close_index
+                    (close_pioneer / BLOCK_SIZE * BLOCK_SIZE) + local_close_index
                 })
         });
         result

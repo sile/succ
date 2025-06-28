@@ -6,7 +6,7 @@ use super::ops::{PredOne, RankBit, SelectOne, SuccOne};
 use super::{Bit, BitString, Index, Rank};
 
 // TODO: parameter
-const SMALL_SIZE: usize = (std::u8::MAX as usize) + 1;
+const SMALL_SIZE: usize = (u8::MAX as usize) + 1;
 const MIDDLE_SIZE: usize = SMALL_SIZE * 8;
 const MIDDLE_COUNT: usize = 32;
 const LARGE_SIZE: usize = MIDDLE_SIZE * MIDDLE_COUNT;
@@ -27,15 +27,14 @@ impl SparseOneNnd {
         let mut smalles = Vec::new();
         let mut small_count_index = 0;
 
-        let mut rank = 0;
         let mut prev_index = 0;
         let mut large_prev = Base::new(0, 0);
 
         let mut next_small_i = 0;
-        for one_index in iter {
+        for (rank, one_index) in iter.enumerate() {
             let one_index = one_index as usize;
             let small_base = smalles.len();
-            while next_small_i <= one_index as usize {
+            while next_small_i <= one_index {
                 small_count_index = smalles.len();
                 smalles.push(0);
                 prev_index = next_small_i;
@@ -57,7 +56,6 @@ impl SparseOneNnd {
             }
 
             debug_assert!((one_index - prev_index) < 0x100);
-            rank += 1;
             smalles.push((one_index - prev_index) as u8);
             smalles[small_count_index] += 1;
         }
@@ -67,9 +65,9 @@ impl SparseOneNnd {
         smalles.shrink_to_fit();
 
         SparseOneNnd {
-            larges: larges,
-            middles: middles,
-            smalles: smalles,
+            larges,
+            middles,
+            smalles,
         }
     }
 }
@@ -153,7 +151,7 @@ impl SelectOne for SparseOneNnd {
                 curr_rank += self.smalles[small_index] as Rank;
                 curr_index += SMALL_SIZE as Index;
                 small_index += self.smalles[small_index] as usize + 1;
-                if !(small_index < self.smalles.len()) {
+                if small_index >= self.smalles.len() {
                     return None;
                 }
             }
