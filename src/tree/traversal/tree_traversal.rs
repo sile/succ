@@ -1,8 +1,8 @@
 use super::DepthFirstIter;
 use super::DepthFirstTraverse;
 use super::VisitNode;
-use tree::Edge;
-use tree::Node;
+use crate::tree::Edge;
+use crate::tree::Node;
 
 type Level = usize;
 type NthChild = usize;

@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 use std::mem;
 
-use bitwise::ops::ExternalByteSize;
+use crate::bitwise::ops::ExternalByteSize;
 
 pub mod balanced_parens;
 pub mod traversal;

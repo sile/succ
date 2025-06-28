@@ -1,7 +1,7 @@
 use super::Bit;
 use super::Index;
 use super::Rank;
-use bitwise;
+use crate::bitwise;
 
 pub trait ExternalByteSize {
     fn external_byte_size(&self) -> u64;

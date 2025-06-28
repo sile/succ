@@ -1,11 +1,11 @@
-use bitwise;
-use bitwise::fixnum::Fixnum;
-use bitwise::fixnum::FixnumLike;
-use bitwise::ops::ExternalByteSize;
-use bitwise::ops::GetClose;
-use bitwise::ops::NndOne;
-use bitwise::Bit;
-use bitwise::Index;
+use crate::bitwise;
+use crate::bitwise::fixnum::Fixnum;
+use crate::bitwise::fixnum::FixnumLike;
+use crate::bitwise::ops::ExternalByteSize;
+use crate::bitwise::ops::GetClose;
+use crate::bitwise::ops::NndOne;
+use crate::bitwise::Bit;
+use crate::bitwise::Index;
 
 pub type Block = u64;
 
