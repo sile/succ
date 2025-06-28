@@ -13,7 +13,7 @@ where
     pub fn new(reader: R) -> Self {
         ByteLines {
             reader: reader.split(b'\n'),
-            on_error: Box::new(|e| panic!("Error: {}", e)),
+            on_error: Box::new(|e| panic!("Error: {e}")),
         }
     }
     pub fn set_on_error<F>(&mut self, on_error: F)

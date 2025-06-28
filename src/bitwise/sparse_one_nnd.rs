@@ -107,7 +107,7 @@ impl RankBit for SparseOneNnd {
         }
 
         let count = self.smalles[small_index] as usize;
-        assert!(index >= curr_index, "{}, {}", index, curr_index);
+        assert!(index >= curr_index, "{index}, {curr_index}");
         let delta = (index - curr_index) as u8;
 
         curr_rank
